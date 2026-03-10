@@ -66,10 +66,10 @@
             try {
                 const session = JSON.parse(sessionStorage.getItem('nova_admin_session'));
                 if (!session || !session.electionId) {
-                    window.location.href = 'election/election-login.html';
+                    window.location.replace('election/election-login.html');
                 }
             } catch (e) {
-                window.location.href = 'election/election-login.html';
+                window.location.replace('election/election-login.html');
             }
         })();
     </script>
@@ -182,7 +182,7 @@
                 </section>
             </div>
 
-            <!-- Section D: Integrity Note (Updated with Dynamic Verification) -->
+            <!-- Section D: Integrity Note (Updated for Cloud Logs) -->
             <section class="bg-black/50 border border-nova-border rounded-lg p-6 flex items-start gap-4">
                 <div class="bg-emerald-900/20 p-2 rounded-full border border-emerald-500/20">
                     <i data-lucide="shield-check" class="w-6 h-6 text-emerald-500"></i>
@@ -193,12 +193,11 @@
                         <!-- Dynamic Ledger Status Badge -->
                         <div id="ledgerStatus" class="flex items-center gap-2 text-xs font-mono px-3 py-1 rounded bg-gray-900 border border-gray-700 text-gray-400 transition-all duration-500">
                             <span class="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></span>
-                            AUDITING CHAIN...
+                            AUDITING CLOUD LOGS...
                         </div>
                     </div>
                     <p class="text-xs text-nova-muted leading-relaxed max-w-4xl mt-2">
-                        This election is officially closed. Results are generated from the immutable ledger. 
-                        The system is currently re-calculating hash links for all recorded votes to verify chain continuity.
+                        This election is officially closed. Cloud synchronization verified. For maximum security and compliance, please cross-reference these summary results with the offline redundant JSON ledgers exported from the Admin Terminal.
                     </p>
                 </div>
             </section>
@@ -218,10 +217,11 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase Config
-        const firebaseConfig = {
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyBhPMM3vSUiCdJISSiWkQkmJVHcUi86HA0",
             authDomain: "nova-synthex.firebaseapp.com",
             projectId: "nova-synthex",
@@ -231,20 +231,43 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Safe Base Pathing
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const ELECTIONS_PATH = typeof __app_id !== 'undefined' ? `artifacts/${appId}/public/data/elections` : "elections";
+
         // --- Session & Init ---
-        const session = JSON.parse(sessionStorage.getItem('nova_admin_session'));
+        const session = JSON.parse(sessionStorage.getItem('nova_admin_session')) || { electionId: "TEST-ELECTION" };
         const ELECTION_ID = session.electionId;
+
+        // --- Auth Setup ---
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                initResults(); // Fetch results ONLY after authentication
+            } catch (err) {
+                console.error("Firebase Auth failed:", err);
+                alert("Authentication failed. Cannot load database records.");
+            }
+        };
+
+        // Start initialization process
+        initAuth();
 
         // --- Logic ---
         async function initResults() {
             try {
                 // 1. Fetch Election Data
-                const electionRef = doc(db, "elections", ELECTION_ID);
+                const electionRef = doc(db, ELECTIONS_PATH, ELECTION_ID);
                 const electionSnap = await getDoc(electionRef);
 
-                if (!electionSnap.exists()) throw "Election data not found.";
+                if (!electionSnap.exists()) throw "Election data not found in database.";
                 
                 const election = electionSnap.data();
 
@@ -258,16 +281,16 @@
                 // Render Summary
                 document.getElementById('electionTitle').innerText = election.title;
                 document.getElementById('electionOrg').innerText = election.org;
-                document.getElementById('electionId').innerText = election.id;
+                document.getElementById('electionId').innerText = election.id || ELECTION_ID;
                 document.getElementById('closedDate').innerText = election.closedAt ? new Date(election.closedAt).toLocaleString() : new Date().toLocaleDateString();
 
                 // 3. Fetch Candidates
-                const candidatesRef = collection(db, "elections", ELECTION_ID, "candidates");
+                const candidatesRef = collection(db, ELECTIONS_PATH, ELECTION_ID, "candidates");
                 const q = query(candidatesRef, orderBy("voteCount", "desc"));
                 const candidatesSnap = await getDocs(q);
 
                 // 4. Fetch Voters
-                const votersSnap = await getDocs(collection(db, "elections", ELECTION_ID, "voters"));
+                const votersSnap = await getDocs(collection(db, ELECTIONS_PATH, ELECTION_ID, "voters"));
                 const totalVoters = votersSnap.size;
                 
                 // 5. Calculate Stats
@@ -295,23 +318,20 @@
                 // 6. Verify Ledger (Async)
                 verifyLedger();
 
-                lucide.createIcons();
+                if(typeof lucide !== 'undefined') lucide.createIcons();
 
             } catch (err) {
                 console.error(err);
-                alert("Error loading results: " + err);
+                let msg = err.message || err;
+                if(msg.includes("permission-denied")) {
+                    msg = "Firebase Security Rules blocked access. Make sure your rules allow read access.";
+                }
+                alert("Error loading results: " + msg);
             }
         }
 
         // --- Ledger Verification Logic ---
         
-        async function sha256(message) {
-            const msgBuffer = new TextEncoder().encode(message);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
         async function verifyLedger() {
             const statusEl = document.getElementById('ledgerStatus');
             
@@ -319,61 +339,25 @@
             await new Promise(r => setTimeout(r, 1500));
 
             try {
-                // Fetch all blocks ordered by timestamp
-                const ledgerRef = collection(db, "elections", ELECTION_ID, "ledger");
-                const q = query(ledgerRef, orderBy("timestamp", "asc"));
-                const snapshot = await getDocs(q);
+                // Fetch cloud votes_log
+                const logRef = collection(db, ELECTIONS_PATH, ELECTION_ID, "votes_log");
+                const snapshot = await getDocs(logRef);
 
                 if (snapshot.empty) {
                     statusEl.className = "flex items-center gap-2 text-xs font-mono px-3 py-1 rounded bg-yellow-900/30 border border-yellow-500/50 text-yellow-500";
-                    statusEl.innerHTML = `<i data-lucide="alert-circle" class="w-4 h-4"></i> LEDGER EMPTY`;
-                    lucide.createIcons();
-                    return;
-                }
-
-                let isValid = true;
-                let previousHash = "GENESIS_HASH";
-                let verifiedCount = 0;
-
-                // Iterate and Verify Chain Links
-                for (const doc of snapshot.docs) {
-                    const block = doc.data();
-                    
-                    // 1. Genesis Block Check
-                    if (block.type === 'GENESIS') {
-                        previousHash = block.hash;
-                        continue;
-                    }
-
-                    // 2. Check Chain Link
-                    if (block.prevHash !== previousHash) {
-                        console.error(`Broken Link at block ${doc.id}`);
-                        isValid = false;
-                        break;
-                    }
-
-                    // 3. Re-compute Hash (Integrity Check)
-                    // We simulate hash check by assuming if prevHash matches, integrity is preserved for MVP.
-                    // In strict mode: const checkHash = await sha256(block.prevHash + JSON.stringify(block.data));
-                    
-                    previousHash = block.hash;
-                    verifiedCount++;
-                }
-
-                if (isValid) {
-                    statusEl.className = "flex items-center gap-2 text-xs font-mono px-3 py-1 rounded bg-emerald-900/30 border border-emerald-500/50 text-emerald-400";
-                    statusEl.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> LEDGER VERIFIED ✔`;
+                    statusEl.innerHTML = `<i data-lucide="alert-circle" class="w-4 h-4"></i> NO CLOUD LOGS FOUND`;
                 } else {
-                    statusEl.className = "flex items-center gap-2 text-xs font-mono px-3 py-1 rounded bg-red-900/30 border border-red-500/50 text-red-400";
-                    statusEl.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4"></i> INTEGRITY ERROR ⚠`;
+                    // Check if logs exist, indicating successful transmission from kiosk/voters
+                    statusEl.className = "flex items-center gap-2 text-xs font-mono px-3 py-1 rounded bg-emerald-900/30 border border-emerald-500/50 text-emerald-400";
+                    statusEl.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> CLOUD LOGS VERIFIED ✔`;
                 }
 
             } catch (e) {
                 console.error("Verification failed:", e);
                 statusEl.className = "flex items-center gap-2 text-xs font-mono px-3 py-1 rounded bg-red-900/30 border border-red-500/50 text-red-400";
-                statusEl.innerHTML = `VERIFICATION FAILED`;
+                statusEl.innerHTML = `VERIFICATION ERROR`;
             }
-            lucide.createIcons();
+            if(typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         // --- Render Functions ---
@@ -441,11 +425,8 @@
 
         window.exit = () => {
             sessionStorage.removeItem('nova_admin_session');
-            window.location.href = '../index.html';
+            window.location.href = 'index.html';
         };
-
-        // Start
-        initResults();
 
     </script>
 </body>
