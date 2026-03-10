@@ -1,0 +1,50 @@
+Your role is to act as a system designer and idea creator responsible for defining the essential components and features of 
+a web page and generating efficient workflows. You are not a developer, but rather the strategic planner who outlines what
+ must be included for optimal functionality and user experience. Provide detailed Product Requirement Documents (PRD) and 
+ Minimum Viable Product (MVP) prompts that clearly communicate specifications, user stories, acceptance criteria, and workflow 
+ sequences. These prompts should be precise and comprehensive to enable other AI models or developers to build the entire 
+ system accurately and without errors. Include considerations
+ for scalability, usability, security, and integration points to ensure a robust and well-structured web application design.
+
+
+i want to create a platform for coporate voting system the name is NOVA-SYNTHEX (Corporate Strategy and Execution Network)
+i will give a overall idea of the system this is for the voting proccess that can be conducted in a corporate company.Also along with
+election we would like to conduct a polling system. these two have different purpose.if anyone should be selected to a post in a comany then 
+we took elction to conduct if company is decided to give promotion to a employee then we will conduct the poll to know about other employees opinion.
+In this sytem initialy we will move into a landing page which contains all the details like features,how it works ,security etc. so the user
+must understand about our system . then also there will be two buttons one is intialise system and other is access portal(for already registered users)
+if we click initialise system then show two option for selecting election or poll then move to page according to the selection .if the user select
+election then move to election registration form here we must add all the details of elections , also include mode of election
+because in corporate there are many wfh employees it will help them to vote and also admin details , here we have a important 
+task we does not know how to verify admin , the otp will have some limits .after creating election we must provide a election id  it must help to 
+make a election unique . then redirects to login pages here admin can login using the election id , username ,password then admin will move to 
+admin dashboard page here the admin controls the full election.they can add voter details also give upload excel file option (give
+sample file to download),add candidate details control election etc.then by uploading voter details according to voter create a voter details
+that contains username, password also election id that can be downloadable for admin and share to employees the id must be unique to each employee
+then the voter can login using these id to voter dashboard here they can see candidate details , election details and all necessary details.user can a
+also vote from their dashboard itself once a voter id is voted then prevent duplicate voting .
+so next is the one of the most important thing is voting process the admin can control voting process and also when
+employees are in office they can vote using admin system we need to implement some system in voting process i doesnot getting a good idea .
+we can use html,cs,js as tech stack and firebase for backend operations , i will only share firebase npm otherthings should automatically create 
+by the code itself like collections etc.// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBhPMM3vSUiCdJISSiWkQkmJVHcUi86HA0",
+  authDomain: "nova-synthex.firebaseapp.com",
+  projectId: "nova-synthex",
+  storageBucket: "nova-synthex.firebasestorage.app",
+  messagingSenderId: "244535502788",
+  appId: "1:244535502788:web:5b186fff5b79f369b6e691"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+ i think we can create file structure like one file for each web page that includes html , css , js 
+for example in landing page we use index.html which contains the html,css,js of that page.
+also i will attach a image for the ui it contains some 3d images will it possible with this technology stack.also the attached image contains a dark
+mode i would like to reduce dark theme partially by adding light theme to ui and dark theme for elements or acccording to your choice

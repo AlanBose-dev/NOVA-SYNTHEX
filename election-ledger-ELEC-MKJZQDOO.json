@@ -1,0 +1,16 @@
+{
+  "electionId": "ELEC-MKJZQDOO",
+  "lastUpdate": "2026-01-18T17:11:52.646Z",
+  "blocks": [
+    {
+      "prevHash": "GENESIS_HASH",
+      "data": {
+        "candidateId": "6YzTSOh8YbcC5sFFRR58",
+        "electionId": "ELEC-MKJZQDOO",
+        "timestamp": "2026-01-18T17:11:47.700Z"
+      },
+      "hash": "886f6f3634bce52374928522d654bacc1727ff8eaf846cadb0bb8c8cb1631375",
+      "timestamp": "2026-01-18T17:11:47.700Z"
+    }
+  ]
+}

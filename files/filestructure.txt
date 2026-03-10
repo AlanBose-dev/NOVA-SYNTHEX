@@ -1,0 +1,38 @@
+nova-synthex/
+│
+├── index.html                    # Landing page (public)
+├── initialize.html               # Choose Election or Poll
+│
+├── election/
+│   ├── election-register.html    # Create election (admin)
+│   ├── election-login.html       # Admin login
+│   ├── admin-dashboard.html      # Election admin dashboard
+│   ├── kiosk-voting.html         # Office voting (ledger-enabled)
+│   ├── voter-login.html          # Election voter login
+│   ├── voter-dashboard.html      # Election voting page
+│   └── results.html              # Election results + ledger verify
+│
+├── poll/
+│   ├── poll-register.html        # Create poll (admin)
+│   ├── poll-login.html           # Poll admin login
+│   ├── poll-dashboard.html       # Poll admin dashboard
+│   ├── voter-login.html          # Poll voter login
+│   ├── poll-vote.html            # Poll voting page
+│   └── poll-results.html         # Poll results
+│
+├── samples/
+│   ├── voter_upload_sample.xlsx  # Excel template for voters
+│   └── candidate_sample.xlsx     # Excel template for candidates
+│
+├── ledger/
+│   └── README.md                 # Explains local JSON audit ledger
+│
+├── docs/
+│   ├── PRD.md                    # Full Product Requirement Document
+│   ├── MVP.md                    # Minimum Viable Product definition
+│   ├── ARCHITECTURE.md           # System architecture description
+│   ├── SECURITY.md               # Threat model & security analysis
+│   └── USER_GUIDE.md             # Admin & voter usage guide
+│
+├── README.md                     # Project overview
+└── .gitignore                    # Excludes ledger JSON files

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOVA-SYNTHEX | Corporate Governance System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        nova: {
+                            bg: '#050505',
+                            surface: '#0F0F12',
+                            border: '#1F1F26',
+                            accent: '#6366f1', // Indigo 500
+                            glow: '#4f46e5',   // Indigo 600
+                            text: '#E2E2E5',
+                            muted: '#A1A1AA'
+                        }
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #050505;
+            color: #E2E2E5;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050505;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1F1F26;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6366f1;
+        }
+
+        /* Subtle Grid Background */
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+
+        /* Text Glow utility */
+        .text-glow {
+            text-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+        
+        /* Card Hover Effect */
+        .tech-card {
+            transition: all 0.3s ease;
+            border: 1px solid #1F1F26;
+        }
+        .tech-card:hover {
+            border-color: #6366f1;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.1);
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col relative overflow-x-hidden">
+
+    <!-- Background Elements -->
+    <div class="fixed inset-0 bg-grid z-0 pointer-events-none"></div>
+    <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-900/20 rounded-full blur-[120px] -z-10"></div>
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 border-b border-nova-border bg-nova-bg/90 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i data-lucide="hexagon" class="text-nova-accent h-6 w-6"></i>
+                <span class="font-mono font-bold tracking-wider text-white">NOVA-SYNTHEX</span>
+            </div>
+            
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-nova-muted">
+                <a href="#about" class="hover:text-white transition-colors">About</a>
+                <a href="#capabilities" class="hover:text-white transition-colors">Capabilities</a>
+                <a href="#comparison" class="hover:text-white transition-colors">Election vs Poll</a>
+                <a href="#security" class="hover:text-white transition-colors">Security Audit</a>
+            </div>
+
+            <button onclick="handleInit()" class="bg-nova-surface border border-nova-border hover:border-nova-accent text-white px-4 py-2 rounded text-xs font-mono tracking-wide transition-all">
+                INITIALIZE_SYSTEM
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative z-10 pt-24 pb-20 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-900/30 border border-indigo-500/30 mb-8">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                <span class="text-xs font-mono text-indigo-200">SYSTEM STATUS: ONLINE</span>
+            </div>
+            
+            <h1 class="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6 text-glow">
+                NOVA-SYNTHEX
+            </h1>
+            <p class="text-xl md:text-2xl text-nova-muted font-light mb-8 max-w-2xl mx-auto leading-relaxed">
+                A secure corporate voting and polling system for internal governance and auditable decision-making.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+                <button onclick="handleInit()" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded font-medium transition-all shadow-lg shadow-indigo-900/20">
+                    Initialize System
+                </button>
+                <a href="portal-select.html" class="w-full sm:w-auto px-8 py-3 bg-transparent border border-nova-border hover:border-white text-nova-muted hover:text-white rounded font-medium transition-all text-center">
+                    Access Portal
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Problem Statement -->
+    <section id="about" class="py-20 bg-nova-surface/50 border-y border-nova-border relative z-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-6">The Governance Void</h2>
+                    <p class="text-nova-muted mb-4 leading-relaxed">
+                        Informal corporate voting methods—email surveys, show of hands, or opaque third-party tools—create significant risks in organizational governance.
+                    </p>
+                    <p class="text-nova-muted mb-6 leading-relaxed">
+                        Without cryptographic verification or a tamper-evident audit trail, centralized decisions lack accountability, leading to diminished trust among stakeholders and employees.
+                    </p>
+                    <ul class="space-y-3 mt-8">
+                        <li class="flex items-center gap-3 text-sm text-nova-muted">
+                            <i data-lucide="x-circle" class="text-red-500 h-4 w-4"></i>
+                            <span>No audit trail for critical decisions</span>
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-nova-muted">
+                            <i data-lucide="x-circle" class="text-red-500 h-4 w-4"></i>
+                            <span>Identity spoofing risks in remote environments</span>
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-nova-muted">
+                            <i data-lucide="x-circle" class="text-red-500 h-4 w-4"></i>
+                            <span>Lack of verifiable anonymity</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-nova-bg border border-nova-border p-8 rounded-lg">
+                    <div class="font-mono text-sm text-indigo-400 mb-4 border-b border-nova-border pb-2"> // SYSTEM_LOGIC_DEF</div>
+                    <p class="text-sm font-mono text-gray-400 mb-2">
+                        IF <span class="text-white">audit_trail</span> == NULL <br>
+                        THEN <span class="text-red-400">trust_level</span> = 0
+                    </p>
+                    <p class="text-sm font-mono text-gray-400 mb-2">
+                        IF <span class="text-white">voter_identity</span> != VERIFIED <br>
+                        THEN <span class="text-red-400">vote_validity</span> = FALSE
+                    </p>
+                    <p class="text-sm font-mono text-gray-400">
+                        EXECUTE <span class="text-green-400">NOVA_PROTOCOL</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Capabilities -->
+    <section id="capabilities" class="py-20 relative z-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex items-end justify-between mb-12">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-2">System Capabilities</h2>
+                    <p class="text-nova-muted">Modules available for deployment.</p>
+                </div>
+                <div class="hidden md:block h-px w-64 bg-nova-border"></div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Card 1 -->
+                <div class="tech-card bg-nova-surface p-6 rounded-lg">
+                    <div class="w-12 h-12 bg-indigo-900/20 border border-indigo-500/20 rounded flex items-center justify-center mb-4">
+                        <i data-lucide="vote" class="text-indigo-400 h-6 w-6"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Corporate Elections</h3>
+                    <p class="text-sm text-nova-muted leading-relaxed">
+                        Formal selection processes for leadership roles, committee members, or board representatives with strict one-person-one-vote enforcement.
+                    </p>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="tech-card bg-nova-surface p-6 rounded-lg">
+                    <div class="w-12 h-12 bg-indigo-900/20 border border-indigo-500/20 rounded flex items-center justify-center mb-4">
+                        <i data-lucide="bar-chart-2" class="text-indigo-400 h-6 w-6"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Opinion Polling</h3>
+                    <p class="text-sm text-nova-muted leading-relaxed">
+                        Rapid sentiment analysis for policy changes, workplace environment surveys, or strategic direction feedback.
+                    </p>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="tech-card bg-nova-surface p-6 rounded-lg">
+                    <div class="w-12 h-12 bg-indigo-900/20 border border-indigo-500/20 rounded flex items-center justify-center mb-4">
+                        <i data-lucide="lock" class="text-indigo-400 h-6 w-6"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Admin Lifecycle</h3>
+                    <p class="text-sm text-nova-muted leading-relaxed">
+                        Complete control over the voting window: Initialization, Voter Verification, Active Phase, and Cryptographic Closure.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Critical Section: Election vs Poll -->
+    <section id="comparison" class="py-20 bg-nova-surface/30 border-t border-nova-border relative z-10">
+        <div class="max-w-5xl mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-white mb-4">Module Distinction</h2>
+                <p class="text-nova-muted max-w-xl mx-auto">
+                    NOVA-SYNTHEX distinguishes strictly between Binding Elections and Opinion Polls. Understand the difference before initialization.
+                </p>
+            </div>
+
+            <div class="border border-nova-border rounded-lg overflow-hidden">
+                <div class="grid grid-cols-3 bg-nova-surface border-b border-nova-border">
+                    <div class="p-4 font-mono text-xs text-nova-muted uppercase tracking-wider">Parameter</div>
+                    <div class="p-4 font-mono text-sm text-white font-bold border-l border-nova-border bg-indigo-900/10 text-center">ELECTION</div>
+                    <div class="p-4 font-mono text-sm text-white font-bold border-l border-nova-border text-center">POLL</div>
+                </div>
+
+                <!-- Row 1 -->
+                <div class="grid grid-cols-3 border-b border-nova-border/50 hover:bg-nova-surface/50 transition-colors">
+                    <div class="p-4 text-sm text-nova-muted font-medium">Primary Objective</div>
+                    <div class="p-4 text-sm text-white border-l border-nova-border/50 text-center">Select a Person/Entity</div>
+                    <div class="p-4 text-sm text-white border-l border-nova-border/50 text-center">Gauge Sentiment</div>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="grid grid-cols-3 border-b border-nova-border/50 hover:bg-nova-surface/50 transition-colors">
+                    <div class="p-4 text-sm text-nova-muted font-medium">Outcome</div>
+                    <div class="p-4 text-sm text-white border-l border-nova-border/50 text-center">Definitive Winner</div>
+                    <div class="p-4 text-sm text-white border-l border-nova-border/50 text-center">Aggregated Data</div>
+                </div>
+
+                <!-- Row 3 -->
+                <div class="grid grid-cols-3 border-b border-nova-border/50 hover:bg-nova-surface/50 transition-colors">
+                    <div class="p-4 text-sm text-nova-muted font-medium">Security Level</div>
+                    <div class="p-4 text-sm text-indigo-400 border-l border-nova-border/50 text-center font-mono">MAXIMUM (Strict Auth)</div>
+                    <div class="p-4 text-sm text-white border-l border-nova-border/50 text-center font-mono">STANDARD</div>
+                </div>
+
+                <!-- Row 4 -->
+                <div class="grid grid-cols-3 hover:bg-nova-surface/50 transition-colors">
+                    <div class="p-4 text-sm text-nova-muted font-medium">Audit Ledger</div>
+                    <div class="p-4 text-sm text-white border-l border-nova-border/50 text-center">Mandatory</div>
+                    <div class="p-4 text-sm text-white border-l border-nova-border/50 text-center">Optional</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="py-20 relative z-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <h2 class="text-3xl font-bold text-white mb-12">Operational Workflow</h2>
+            
+            <div class="grid md:grid-cols-4 gap-8">
+                <!-- Step 1 -->
+                <div class="relative">
+                    <div class="text-6xl font-bold text-nova-border absolute -top-8 -left-4 z-0">01</div>
+                    <div class="relative z-10">
+                        <h4 class="text-lg font-bold text-white mb-3">Initialization</h4>
+                        <p class="text-sm text-nova-muted">Admin defines the event type (Election/Poll), sets the time window, and establishes the candidate roster.</p>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="relative">
+                    <div class="text-6xl font-bold text-nova-border absolute -top-8 -left-4 z-0">02</div>
+                    <div class="relative z-10">
+                        <h4 class="text-lg font-bold text-white mb-3">Verification</h4>
+                        <p class="text-sm text-nova-muted">Voter whitelist is imported. System generates unique, one-time access tokens for eligible participants.</p>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="relative">
+                    <div class="text-6xl font-bold text-nova-border absolute -top-8 -left-4 z-0">03</div>
+                    <div class="relative z-10">
+                        <h4 class="text-lg font-bold text-white mb-3">Voting Phase</h4>
+                        <p class="text-sm text-nova-muted">Votes are cast encrypted. The identity is decoupled from the vote choice upon submission.</p>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="relative">
+                    <div class="text-6xl font-bold text-nova-border absolute -top-8 -left-4 z-0">04</div>
+                    <div class="relative z-10">
+                        <h4 class="text-lg font-bold text-white mb-3">Closure & Audit</h4>
+                        <p class="text-sm text-nova-muted">Election is sealed. Results are computed. An immutable log of events is generated for review.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security Model -->
+    <section id="security" class="py-20 bg-nova-surface border-y border-nova-border relative z-10">
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+            <div class="order-2 md:order-1">
+                 <div class="bg-black/50 p-6 rounded border border-nova-border font-mono text-xs text-green-400 overflow-hidden">
+                    <div class="mb-2 opacity-50"># Audit Log Stream</div>
+                    <div class="mb-1">> EVENT: VOTE_CAST</div>
+                    <div class="mb-1 text-gray-500">> HASH: 8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4</div>
+                    <div class="mb-1">> TIMESTAMP: 2023-10-27T14:22:10Z</div>
+                    <div class="mb-1">> INTEGRITY: VERIFIED</div>
+                    <div class="mb-1 text-gray-500">----------------------------------------</div>
+                    <div class="mb-1">> EVENT: VOTE_CAST</div>
+                    <div class="mb-1 text-gray-500">> HASH: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</div>
+                    <div class="mb-1 animate-pulse">_</div>
+                 </div>
+            </div>
+            <div class="order-1 md:order-2">
+                <div class="inline-flex items-center gap-2 text-indigo-400 mb-4 font-mono text-sm">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    <span>SECURITY ARCHITECTURE</span>
+                </div>
+                <h2 class="text-3xl font-bold text-white mb-6">Trust & Integrity</h2>
+                <p class="text-nova-muted mb-6">
+                    NOVA-SYNTHEX utilizes a blockchain-inspired ledger system to ensure that once a vote is cast, it cannot be altered or deleted without detection.
+                </p>
+                <div class="space-y-4">
+                    <div class="flex gap-4">
+                        <div class="w-1 bg-indigo-500 h-full rounded"></div>
+                        <div>
+                            <h4 class="text-white font-medium">One-Person-One-Vote</h4>
+                            <p class="text-sm text-nova-muted">Strict enforcement prevents double voting through token invalidation.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="w-1 bg-indigo-500 h-full rounded"></div>
+                        <div>
+                            <h4 class="text-white font-medium">Voter Anonymity</h4>
+                            <p class="text-sm text-nova-muted">Voter identity is cryptographically hashed and separated from the ballot.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases -->
+    <section class="py-20 relative z-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <h3 class="text-xl font-bold text-white mb-8 border-l-4 border-indigo-500 pl-4">Standard Deployment Scenarios</h3>
+            <div class="grid md:grid-cols-4 gap-4">
+                <div class="p-4 bg-nova-surface rounded border border-nova-border">
+                    <h4 class="text-white font-medium text-sm mb-1">Department Head Election</h4>
+                    <p class="text-xs text-nova-muted">Formal internal promotion voting.</p>
+                </div>
+                <div class="p-4 bg-nova-surface rounded border border-nova-border">
+                    <h4 class="text-white font-medium text-sm mb-1">Committee Selection</h4>
+                    <p class="text-xs text-nova-muted">Board or safety committee representation.</p>
+                </div>
+                <div class="p-4 bg-nova-surface rounded border border-nova-border">
+                    <h4 class="text-white font-medium text-sm mb-1">Policy Ratification</h4>
+                    <p class="text-xs text-nova-muted">Acceptance of new HR policies.</p>
+                </div>
+                <div class="p-4 bg-nova-surface rounded border border-nova-border">
+                    <h4 class="text-white font-medium text-sm mb-1">Town Hall Feedback</h4>
+                    <p class="text-xs text-nova-muted">Real-time questions and polling.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final Action -->
+    <section class="py-24 bg-gradient-to-b from-nova-bg to-indigo-950/20 relative z-10 text-center border-t border-nova-border">
+        <div class="max-w-3xl mx-auto px-6">
+            <i data-lucide="alert-triangle" class="w-10 h-10 text-indigo-400 mx-auto mb-6"></i>
+            <h2 class="text-3xl font-bold text-white mb-4">Ready to Initialize?</h2>
+            <p class="text-nova-muted mb-10">
+                Proceed only if you understand the responsibility of administering a corporate voting process. 
+                Misconfiguration can lead to voided results.
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button onclick="handleInit()" class="w-full sm:w-auto px-8 py-3 bg-white text-black hover:bg-gray-200 rounded font-bold transition-all">
+                    Initialize System
+                </button>
+                <a href="portal-select.html" class="w-full sm:w-auto px-8 py-3 bg-nova-bg border border-nova-border hover:border-indigo-500 text-white rounded font-medium transition-all inline-flex items-center justify-center">
+                    Enter Admin Portal
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-nova-surface border-t border-nova-border py-12 relative z-10">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <i data-lucide="hexagon" class="text-nova-muted h-4 w-4"></i>
+                    <span class="font-mono font-bold text-white text-sm">NOVA-SYNTHEX</span>
+                </div>
+                <p class="text-xs text-nova-muted">
+                    Secure Governance & Polling Architecture.
+                </p>
+            </div>
+            
+            <div class="text-right">
+                <p class="text-[10px] text-gray-500 max-w-md ml-auto leading-relaxed">
+                    DISCLAIMER: NOVA-SYNTHEX is intended for internal corporate governance and academic research purposes only. 
+                    It is not designed, certified, or intended for public, governmental, or statutory elections.
+                </p>
+                <p class="text-[10px] text-gray-600 mt-2">
+                    &copy; 2024 NOVA-SYNTHEX Systems. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Simple Feedback Script -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        function handleInit() {
+            // Direct navigation to initialization page
+            window.location.href = "initialize.html";
+        }
+        
+        // Removed handleAccess() as buttons are now direct links
+    </script>
+</body>
+</html>

@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voter Dashboard | NOVA-SYNTHEX</title>
+    
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.292.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        nova: {
+                            bg: '#050505',
+                            surface: '#0F0F12',
+                            panel: '#18181B',
+                            border: '#1F1F26',
+                            accent: '#10b981', // Emerald for Voters
+                            text: '#E2E2E5',
+                            muted: '#A1A1AA',
+                            success: '#10b981',
+                            error: '#ef4444',
+                            warning: '#f59e0b'
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'zoom-in': 'zoomIn 0.3s ease-out forwards',
+                    },
+                    keyframes: {
+                        zoomIn: {
+                            '0%': { transform: 'scale(0.95)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; color: #E2E2E5; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #1F1F26; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+
+        /* Candidate Radio Card Styling */
+        .candidate-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        /* Only apply active styles if input is enabled */
+        .candidate-radio:enabled:checked + .candidate-card {
+            border-color: #10b981;
+            background-color: rgba(16, 185, 129, 0.05);
+            box-shadow: 0 0 0 1px #10b981;
+        }
+        .candidate-radio:enabled:checked + .candidate-card .check-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        /* Disabled state */
+        .candidate-radio:disabled + .candidate-card {
+            cursor: default;
+            opacity: 0.7;
+        }
+
+        .modal-content {
+            animation: zoomIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="antialiased h-screen flex flex-col relative overflow-hidden">
+
+    <!-- Auth Guard -->
+    <script>
+        (function() {
+            try {
+                const sessionStr = sessionStorage.getItem('nova_voter_session');
+                const isPreview = window.location.href.includes('usercontent.goog') || window.location.href.includes('blob:');
+                if (!isPreview && !sessionStr) {
+                    window.location.replace('voter-login.html');
+                    return;
+                }
+                const session = JSON.parse(sessionStr);
+                if (!isPreview && (!session || !session.electionId || !session.voterId)) {
+                    window.location.replace('voter-login.html');
+                }
+            } catch (e) {
+                console.log('Routing blocked in preview');
+            }
+        })();
+    </script>
+
+    <!-- Background -->
+    <div class="fixed inset-0 bg-grid z-0 pointer-events-none"></div>
+
+    <!-- Header -->
+    <header class="border-b border-nova-border bg-nova-bg/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i data-lucide="vote" class="text-nova-accent h-6 w-6"></i>
+                <span class="font-mono font-bold tracking-wider text-white">NOVA-SYNTHEX</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex items-center gap-2 text-xs font-mono text-nova-muted">
+                    <span id="headerUser">VOTER</span>
+                    <span class="text-nova-border">|</span>
+                    <span id="headerConnection" class="text-emerald-500">CONNECTED</span>
+                </div>
+                <button onclick="logout()" class="text-nova-muted hover:text-white transition-colors" title="Logout">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow py-8 px-4 relative z-10 overflow-y-auto">
+        <div class="max-w-3xl mx-auto space-y-6" id="mainContainer">
+            
+            <!-- Section A: Overview -->
+            <section class="text-center space-y-2 mb-8">
+                <span class="text-[10px] font-mono text-nova-muted uppercase tracking-widest border border-nova-border px-2 py-0.5 rounded">Voting Gateway</span>
+                <h1 id="electionTitle" class="text-3xl font-bold text-white">Loading...</h1>
+                <p id="electionOrg" class="text-nova-accent font-medium">...</p>
+                <p id="electionDesc" class="text-sm text-nova-muted max-w-lg mx-auto">...</p>
+                <div class="flex justify-center gap-4 text-xs text-nova-muted font-mono pt-2">
+                    <span id="electionIdDisplay">ID: ...</span>
+                </div>
+            </section>
+
+            <!-- Dynamic Red/Green Status Banner -->
+            <div id="statusBanner" class="rounded-lg p-6 flex flex-col items-center justify-center gap-2 border transition-all duration-500 bg-nova-surface border-nova-border">
+                <div id="statusIndicator" class="w-4 h-4 rounded-full bg-gray-500 mb-2"></div>
+                <h2 id="statusTitle" class="text-lg font-bold text-white font-mono tracking-wide">CONNECTING TO HOST...</h2>
+                <p id="statusDesc" class="text-xs text-nova-muted text-center max-w-md">Please wait while we establish a secure connection to the central ledger.</p>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="flex flex-col items-center justify-center py-10">
+                <div class="w-8 h-8 border-2 border-nova-accent border-t-transparent rounded-full animate-spin mb-4"></div>
+            </div>
+
+            <!-- Dashboard Content (Grid) -->
+            <div id="dashboardContent" class="hidden grid gap-8">
+                
+                <!-- Section D: Participation Stats -->
+                <div id="participationPanel" class="hidden grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="bg-nova-surface border border-nova-border p-4 rounded-lg text-center">
+                        <span class="text-[10px] uppercase text-nova-muted">Total Voters</span>
+                        <span id="statTotalVoters" class="block text-2xl font-bold text-white">0</span>
+                    </div>
+                    <div class="bg-nova-surface border border-nova-border p-4 rounded-lg text-center">
+                        <span class="text-[10px] uppercase text-nova-muted">Votes Cast</span>
+                        <span id="statVotesCast" class="block text-2xl font-bold text-emerald-400">0</span>
+                    </div>
+                    <div class="bg-nova-surface border border-nova-border p-4 rounded-lg text-center col-span-2 md:col-span-1">
+                        <span class="text-[10px] uppercase text-nova-muted">Participation</span>
+                        <span id="statTurnout" class="block text-2xl font-bold text-indigo-400">0%</span>
+                    </div>
+                </div>
+
+                <!-- Section C: Candidate Information / Voting Panel -->
+                <div id="votingInterface" class="bg-nova-surface border border-nova-border rounded-lg p-6 mt-4">
+                    <div class="flex items-center justify-between mb-6 border-b border-nova-border pb-4">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="users" class="w-5 h-5 text-nova-accent"></i>
+                            <h2 class="text-lg font-bold text-white">Candidates Registry</h2>
+                        </div>
+                        <span id="selectionInstruction" class="text-xs text-nova-muted italic">Review candidates below</span>
+                    </div>
+                    
+                    <form id="voteForm" class="space-y-4">
+                        <div id="candidateList" class="grid gap-4">
+                            <!-- Candidates injected here -->
+                        </div>
+                    </form>
+
+                    <!-- Vote Actions -->
+                    <div id="voteActions" class="mt-8 pt-4 border-t border-nova-border hidden">
+                        <button id="submitVoteBtn" onclick="submitVote()" disabled class="w-full py-4 bg-nova-accent text-black font-bold rounded-lg shadow-[0_0_20px_rgba(16,185,129,0.3)] opacity-50 cursor-not-allowed hover:opacity-100 transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                            <span>SUBMIT ENCRYPTED VOTE</span>
+                            <i data-lucide="lock" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Success State -->
+                <div id="successState" class="hidden bg-nova-surface border border-emerald-500/30 rounded-lg p-8 text-center animate-zoom-in shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+                    <div class="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/20">
+                        <i data-lucide="check-check" class="w-10 h-10 text-emerald-500"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-2">Vote Broadcast Successful</h2>
+                    <p class="text-nova-muted max-w-md mx-auto mb-6">
+                        Your vote has been transmitted securely. The Admin Terminal has received the hashed data and stored it across the offline redundant ledgers.
+                    </p>
+                    <div class="inline-block bg-black/40 border border-nova-border px-4 py-2 rounded text-xs font-mono text-emerald-400 mb-8">
+                        TRANSMISSION: SECURED
+                    </div>
+                    <div>
+                        <button onclick="logout()" class="px-6 py-2 bg-nova-surface border border-nova-border hover:border-white text-white rounded text-sm transition-colors">
+                            Logout & End Session
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Closed State -->
+                <div id="closedState" class="hidden bg-nova-surface border border-nova-border rounded-lg p-8 text-center">
+                    <h2 class="text-xl font-bold text-white mb-2">Election Concluded</h2>
+                    <p class="text-nova-muted">Voting has ended. Official results will be published by the administrator.</p>
+                </div>
+
+                <!-- Section E: Results (Only if Closed) -->
+                <div id="resultsPanel" class="hidden bg-nova-surface border border-nova-border rounded-lg p-6">
+                    <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                        <i data-lucide="bar-chart-2" class="w-5 h-5 text-purple-400"></i>
+                        Final Results
+                    </h3>
+                    <div class="relative h-64 w-full">
+                        <canvas id="resultsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Section F: Exit Controls -->
+                <div class="flex justify-center pt-4 pb-8">
+                    <button onclick="logout()" class="px-6 py-2 border border-nova-border text-nova-muted hover:text-white rounded text-sm transition-colors flex items-center gap-2">
+                        <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Custom Alert Modal -->
+    <div id="customAlertModal" class="fixed inset-0 z-[100] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center transition-opacity">
+        <div class="bg-nova-surface border border-nova-border p-6 rounded-lg w-full max-w-sm shadow-2xl modal-content text-center">
+            <div class="mx-auto w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mb-4 text-red-400">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <h3 id="alertTitle" class="text-lg font-bold text-white mb-2">Error</h3>
+            <p id="alertMessage" class="text-sm text-nova-muted mb-6">Something went wrong.</p>
+            <button onclick="closeCustomAlert()" class="w-full py-2 bg-red-600 hover:bg-red-500 text-white rounded text-sm font-bold transition-colors">
+                Dismiss
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, collection, runTransaction, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Config
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyBhPMM3vSUiCdJISSiWkQkmJVHcUi86HA0",
+            authDomain: "nova-synthex.firebaseapp.com",
+            projectId: "nova-synthex",
+            storageBucket: "nova-synthex.firebasestorage.app",
+            messagingSenderId: "244535502788",
+            appId: "1:244535502788:web:5b186fff5b79f369b6e691"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Pathing for Preview
+        const isPreviewEnv = typeof __app_id !== 'undefined';
+        const appId = isPreviewEnv ? __app_id : 'default-app-id';
+        const ELECTIONS_PATH = isPreviewEnv ? `artifacts/${appId}/public/data/elections` : "elections";
+
+        // --- Session ---
+        const session = JSON.parse(sessionStorage.getItem('nova_voter_session')) || { electionId: "preview-election", voterId: "preview-voter", username: "preview_user" };
+        const ELECTION_ID = session.electionId;
+        const VOTER_ID = session.voterId;
+
+        // --- State ---
+        let electionData = null;
+        let voterData = null;
+        let candidatesData = [];
+        let chartInstance = null;
+        let selectedCandidateId = null;
+        let selectedCandidateName = ""; // Required for the Admin log
+
+        // --- Init ---
+        document.getElementById('headerUser').innerText = session.username.toUpperCase();
+        document.getElementById('electionIdDisplay').innerText = `ID: ${ELECTION_ID}`;
+
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+
+        // --- Auth Setup (MANDATORY BEFORE QUERIES) ---
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Firebase Auth failed:", err);
+                showCustomAlert("Auth Error", "Failed to connect to secure environment. Check your connection.");
+            }
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                 initDashboard(); 
+            }
+        });
+
+        initAuth();
+
+        function initDashboard() {
+            const dbErrorCallback = (err) => {
+                console.error("Database Sync Error:", err);
+                if (err.message.includes("Missing or insufficient permissions") || err.code === 'permission-denied') {
+                    showCustomAlert("Connection Blocked", "Database connection was blocked.\n\n• Turn off Ad-Blockers (like Brave Shields or uBlock).\n• Turn off Strict Tracking Prevention.");
+                }
+            };
+
+            // 1. Election Document (Status)
+            onSnapshot(doc(db, `${ELECTIONS_PATH}/${ELECTION_ID}`), (docSnap) => {
+                if (!docSnap.exists()) return;
+                electionData = docSnap.data();
+                
+                // Update Overview
+                document.getElementById('electionTitle').innerText = electionData.title;
+                document.getElementById('electionOrg').innerText = electionData.org;
+                document.getElementById('electionDesc').innerText = electionData.description || '';
+                
+                // Trigger Render
+                renderDashboard();
+            }, dbErrorCallback);
+
+            // 2. Voter Document (Has Voted?)
+            onSnapshot(doc(db, `${ELECTIONS_PATH}/${ELECTION_ID}/voters/${VOTER_ID}`), (docSnap) => {
+                if (docSnap.exists()) {
+                    voterData = docSnap.data();
+                    renderDashboard();
+                }
+            }, dbErrorCallback);
+
+            // 3. Candidates Collection (List & Results)
+            onSnapshot(collection(db, `${ELECTIONS_PATH}/${ELECTION_ID}/candidates`), (snapshot) => {
+                candidatesData = [];
+                snapshot.forEach(doc => {
+                    candidatesData.push({ id: doc.id, ...doc.data() });
+                });
+                renderDashboard();
+            }, dbErrorCallback);
+
+            // 4. Voters Collection (Participation Stats)
+            onSnapshot(collection(db, `${ELECTIONS_PATH}/${ELECTION_ID}/voters`), (snapshot) => {
+                const total = snapshot.size;
+                let cast = 0;
+                snapshot.forEach(d => { if(d.data().hasVoted) cast++; });
+                
+                document.getElementById('statTotalVoters').innerText = total;
+                document.getElementById('statVotesCast').innerText = cast;
+                document.getElementById('statTurnout').innerText = total > 0 ? Math.round((cast/total)*100) + "%" : "0%";
+            }, dbErrorCallback);
+        }
+
+        // --- Cryptography Helper ---
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // --- UI Helpers ---
+        window.showCustomAlert = (title, message) => {
+            document.getElementById('alertTitle').innerText = title;
+            document.getElementById('alertMessage').innerText = message;
+            document.getElementById('customAlertModal').classList.remove('hidden');
+        };
+        window.closeCustomAlert = () => {
+            document.getElementById('customAlertModal').classList.add('hidden');
+        };
+
+        // --- Core Rendering Logic ---
+
+        function renderDashboard() {
+            if (!electionData || !voterData || candidatesData.length === 0) return;
+
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('dashboardContent').classList.remove('hidden');
+
+            const status = electionData.status; // DRAFT, LIVE, PAUSED, CLOSED
+            const hasVoted = voterData.hasVoted;
+
+            // 1. Status Banner Logic (Red / Green indicator for Terminal dependency)
+            const banner = document.getElementById('statusBanner');
+            const dot = document.getElementById('statusIndicator');
+            const title = document.getElementById('statusTitle');
+            const desc = document.getElementById('statusDesc');
+
+            if (status === 'DRAFT') {
+                banner.className = "rounded-lg p-6 flex flex-col items-center justify-center gap-2 border bg-red-900/10 border-red-500/30 transition-all duration-500";
+                dot.className = "w-4 h-4 rounded-full bg-red-500 mb-2 shadow-[0_0_15px_#ef4444] animate-pulse";
+                title.innerText = "AWAITING TERMINAL INITIALIZATION";
+                title.className = "text-lg font-bold text-red-500 font-mono tracking-wide";
+                desc.innerText = "The Administrator has not yet launched the secure terminal. Please stand by.";
+                banner.classList.remove('hidden');
+            } else if (status === 'LIVE' && !hasVoted) {
+                banner.className = "rounded-lg p-6 flex flex-col items-center justify-center gap-2 border bg-green-900/10 border-green-500/30 transition-all duration-500";
+                dot.className = "w-4 h-4 rounded-full bg-green-500 mb-2 shadow-[0_0_15px_#10b981]";
+                title.innerText = "SYSTEM LIVE - VOTING OPEN";
+                title.className = "text-lg font-bold text-green-500 font-mono tracking-wide";
+                desc.innerText = "Secure connection to terminal established. You may now cast your vote.";
+                banner.classList.remove('hidden');
+            } else if (status === 'PAUSED' && !hasVoted) {
+                banner.className = "rounded-lg p-6 flex flex-col items-center justify-center gap-2 border bg-amber-900/10 border-amber-500/30 transition-all duration-500";
+                dot.className = "w-4 h-4 rounded-full bg-amber-500 mb-2 shadow-[0_0_15px_#f59e0b]";
+                title.innerText = "VOTING PAUSED";
+                title.className = "text-lg font-bold text-amber-500 font-mono tracking-wide";
+                desc.innerText = "The Administrator has temporarily paused voting.";
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden'); // Hide banner if voted or closed
+            }
+
+            // 2. View Switching
+            const vInt = document.getElementById('votingInterface');
+            const vSuc = document.getElementById('successState');
+            const vClo = document.getElementById('closedState');
+
+            if (hasVoted) {
+                vInt.classList.add('hidden');
+                vSuc.classList.remove('hidden');
+                vClo.classList.add('hidden');
+            } else if (status === 'CLOSED') {
+                vInt.classList.add('hidden');
+                vSuc.classList.add('hidden');
+                vClo.classList.remove('hidden');
+            } else {
+                vInt.classList.remove('hidden');
+                vSuc.classList.add('hidden');
+                vClo.classList.add('hidden');
+                renderCandidateList(status, hasVoted);
+            }
+
+            // 3. Panels Visibility
+            const participationPanel = document.getElementById('participationPanel');
+            const resultsPanel = document.getElementById('resultsPanel');
+
+            if (status !== 'DRAFT') participationPanel.classList.remove('hidden');
+            else participationPanel.classList.add('hidden');
+
+            if (status === 'CLOSED') {
+                resultsPanel.classList.remove('hidden');
+                renderResultsChart();
+            } else {
+                resultsPanel.classList.add('hidden');
+            }
+        }
+
+        function renderCandidateList(status, hasVoted) {
+            const container = document.getElementById('candidateList');
+            const actions = document.getElementById('voteActions');
+            const instruction = document.getElementById('selectionInstruction');
+            
+            const isVotingActive = (status === 'LIVE' && !hasVoted);
+            
+            if (isVotingActive) {
+                actions.classList.remove('hidden');
+                instruction.innerText = "Select one candidate to cast your vote.";
+            } else {
+                actions.classList.add('hidden');
+                instruction.innerText = "Candidate list (Read Only)";
+            }
+
+            container.innerHTML = candidatesData.map(c => {
+                const initial = c.name.charAt(0);
+                // Important: Escape quotes in names for the onclick handler
+                const safeName = c.name.replace(/'/g, "\\'");
+                
+                if (isVotingActive) {
+                    return `
+                    <label class="relative block group">
+                        <input type="radio" name="candidate" value="${c.id}" class="candidate-radio peer sr-only" onchange="handleSelection('${c.id}', '${safeName}')">
+                        <div class="candidate-card bg-nova-surface border border-nova-border p-4 rounded-lg flex items-center justify-between hover:border-emerald-500/50">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 bg-nova-panel rounded-full flex items-center justify-center text-nova-muted font-bold border border-nova-border">
+                                    ${initial}
+                                </div>
+                                <div>
+                                    <h3 class="text-white font-medium">${c.name}</h3>
+                                    <p class="text-xs text-nova-muted">${c.role || 'Candidate'}</p>
+                                </div>
+                            </div>
+                            <div class="check-icon w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-black opacity-0 transform scale-75 transition-all">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                    </label>`;
+                } else {
+                    return `
+                    <div class="bg-nova-panel border border-nova-border p-4 rounded-lg flex items-center gap-4 opacity-50 cursor-not-allowed">
+                        <div class="w-10 h-10 bg-black rounded-full flex items-center justify-center text-gray-500 font-bold border border-nova-border">
+                            ${initial}
+                        </div>
+                        <div>
+                            <h3 class="text-gray-300 font-medium">${c.name}</h3>
+                            <p class="text-xs text-gray-500">${c.role || 'Candidate'}</p>
+                        </div>
+                    </div>`;
+                }
+            }).join('');
+            
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function renderResultsChart() {
+            const ctx = document.getElementById('resultsChart');
+            if(!ctx) return;
+            
+            if (chartInstance) chartInstance.destroy();
+
+            const labels = candidatesData.map(c => c.name);
+            const data = candidatesData.map(c => c.voteCount || 0);
+            
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Votes',
+                        data: data,
+                        backgroundColor: '#6366f1',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            grid: { color: '#27272A' },
+                            ticks: { color: '#A1A1AA', precision: 0 }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#E2E2E5' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Actions ---
+
+        window.handleSelection = (id, name) => {
+            selectedCandidateId = id;
+            selectedCandidateName = name;
+            const btn = document.getElementById('submitVoteBtn');
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        };
+
+        window.submitVote = async () => {
+            if (!selectedCandidateId) return;
+
+            const btn = document.getElementById('submitVoteBtn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = `<div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div> <span>BROADCASTING...</span>`;
+            btn.disabled = true;
+            btn.classList.add('opacity-70');
+
+            try {
+                const timestamp = new Date().toISOString();
+                
+                // Write vote to Firestore
+                await runTransaction(db, async (transaction) => {
+                    const voterRef = doc(db, `${ELECTIONS_PATH}/${ELECTION_ID}/voters/${VOTER_ID}`);
+                    const candidateRef = doc(db, `${ELECTIONS_PATH}/${ELECTION_ID}/candidates/${selectedCandidateId}`);
+                    
+                    // Create a document in votes_log to broadcast to the Admin Terminal
+                    const voteLogRef = doc(collection(db, `${ELECTIONS_PATH}/${ELECTION_ID}/votes_log`)); 
+
+                    const vDoc = await transaction.get(voterRef);
+                    if (vDoc.data().hasVoted) throw "Double-vote prevention triggered.";
+
+                    // Perform writes
+                    transaction.update(voterRef, { hasVoted: true, votedAt: timestamp });
+                    transaction.update(candidateRef, { voteCount: increment(1) });
+                    
+                    // Send to admin terminal
+                    transaction.set(voteLogRef, {
+                        candidateName: selectedCandidateName,
+                        timestamp: timestamp,
+                        voterIdHash: await sha256(VOTER_ID + timestamp)
+                    });
+                });
+
+                // UI will automatically update based on the listener for `voterData.hasVoted` changing to true.
+                
+            } catch (e) {
+                showCustomAlert("Submission Error", e.toString());
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                btn.classList.remove('opacity-70');
+                if(typeof lucide !== 'undefined') lucide.createIcons();
+                if(e.toString().includes("Double-vote")) setTimeout(() => location.reload(), 2000);
+            }
+        };
+
+        window.logout = () => {
+            sessionStorage.removeItem('nova_voter_session');
+            window.location.replace('voter-login.html');
+        };
+
+    </script>
+</body>
+</html>

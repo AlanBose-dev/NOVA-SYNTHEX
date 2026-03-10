@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | NOVA-SYNTHEX</title>
+    
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.292.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        nova: {
+                            bg: '#050505',
+                            surface: '#0F0F12',
+                            panel: '#18181B',
+                            border: '#27272A',
+                            accent: '#6366f1',
+                            success: '#10b981',
+                            warning: '#fbbf24',
+                            error: '#ef4444',
+                            text: '#E2E2E5',
+                            muted: '#A1A1AA'
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin-slow': 'spin 3s linear infinite',
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'zoom-in': 'zoomIn 0.3s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        zoomIn: {
+                            '0%': { transform: 'scale(0.95)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; color: #E2E2E5; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #27272A; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            height: 100vh;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #A1A1AA;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+        .nav-item.active {
+            background-color: rgba(99, 102, 241, 0.1);
+            color: #818cf8;
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            border: 1px solid;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .status-DRAFT { background-color: rgba(107, 114, 128, 0.1); color: #9ca3af; border-color: rgba(107, 114, 128, 0.2); }
+        .status-LIVE { background-color: rgba(16, 185, 129, 0.1); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.2); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .status-PAUSED { background-color: rgba(251, 191, 36, 0.1); color: #fcd34d; border-color: rgba(251, 191, 36, 0.2); }
+        .status-CLOSED { background-color: rgba(239, 68, 68, 0.1); color: #fca5a5; border-color: rgba(239, 68, 68, 0.2); }
+        
+        .modal-content {
+            animation: zoomIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="antialiased overflow-hidden">
+
+    <!-- Auth Guard -->
+    <script>
+        (function() {
+            const isPreview = window.location.href.includes('usercontent.goog') || window.location.href.includes('blob:');
+            if (!isPreview && !sessionStorage.getItem('nova_admin_session')) {
+                try {
+                    window.location.replace('election-login.html');
+                } catch(e) {
+                    console.log('Routing blocked in preview');
+                }
+            }
+        })();
+    </script>
+
+    <div class="dashboard-grid">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="bg-nova-surface border-r border-nova-border flex flex-col">
+            <div class="p-6 border-b border-nova-border">
+                <div class="flex items-center gap-2 text-nova-accent mb-1">
+                    <i data-lucide="hexagon" class="w-6 h-6"></i>
+                    <span class="font-mono font-bold tracking-wider">NOVA-SYNTHEX</span>
+                </div>
+                <div class="text-[10px] text-nova-muted font-mono uppercase">Admin Workspace</div>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-1">
+                <div onclick="switchSection('overview')" class="nav-item active" id="nav-overview">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+                </div>
+                <div onclick="switchSection('candidates')" class="nav-item" id="nav-candidates">
+                    <i data-lucide="users" class="w-4 h-4"></i> Candidates
+                </div>
+                <div onclick="switchSection('voters')" class="nav-item" id="nav-voters">
+                    <i data-lucide="contact" class="w-4 h-4"></i> Voter Roster
+                </div>
+                <div onclick="switchSection('controls')" class="nav-item" id="nav-controls">
+                    <i data-lucide="sliders" class="w-4 h-4"></i> Election Control
+                </div>
+                <div onclick="checkResultsAccess()" class="nav-item text-gray-500" id="nav-results">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Results
+                </div>
+            </nav>
+
+            <div class="p-4 border-t border-nova-border">
+                <div class="bg-indigo-900/10 rounded p-3 mb-4">
+                    <p class="text-[10px] text-indigo-300 font-mono mb-1">ELECTION ID</p>
+                    <div class="flex items-center justify-between">
+                        <code id="sidebarElectionId" class="text-xs text-white font-mono truncate">...</code>
+                        <button onclick="copyId()" class="text-indigo-400 hover:text-white"><i data-lucide="copy" class="w-3 h-3"></i></button>
+                    </div>
+                </div>
+                <button onclick="logout()" class="w-full py-2 text-xs text-red-400 hover:text-red-300 border border-red-900/30 rounded hover:bg-red-900/10 transition-colors flex items-center justify-center gap-2">
+                    <i data-lucide="log-out" class="w-3 h-3"></i> Secure Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="bg-nova-bg relative overflow-hidden">
+            
+            <!-- Header Bar -->
+            <header class="h-16 border-b border-nova-border flex items-center justify-between px-8 bg-nova-bg/50 backdrop-blur z-10 relative">
+                <div>
+                    <h2 id="pageTitle" class="text-lg font-bold text-white">Dashboard Overview</h2>
+                    <p id="pageSubtitle" class="text-xs text-nova-muted">Real-time election monitoring</p>
+                </div>
+                <div id="headerStatusBadge" class="status-badge status-DRAFT">
+                    <span class="w-2 h-2 rounded-full bg-current"></span>
+                    <span id="headerStatusText">CONNECTING...</span>
+                </div>
+            </header>
+
+            <div class="p-8 h-[calc(100vh-64px)] overflow-y-auto custom-scrollbar relative">
+
+                <!-- SECTION 1: OVERVIEW -->
+                <section id="sec-overview" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-nova-surface border border-nova-border p-6 rounded-xl">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="p-2 bg-indigo-500/10 rounded-lg"><i data-lucide="users" class="w-5 h-5 text-indigo-400"></i></div>
+                                <span class="text-[10px] uppercase text-nova-muted font-mono">Total Voters</span>
+                            </div>
+                            <h3 id="statTotalVoters" class="text-3xl font-bold text-white">0</h3>
+                            <p class="text-xs text-nova-muted mt-1">Registered participants</p>
+                        </div>
+                        <div class="bg-nova-surface border border-nova-border p-6 rounded-xl">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="p-2 bg-emerald-500/10 rounded-lg"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i></div>
+                                <span class="text-[10px] uppercase text-nova-muted font-mono">Votes Cast</span>
+                            </div>
+                            <h3 id="statVotesCast" class="text-3xl font-bold text-white">0</h3>
+                            <p class="text-xs text-nova-muted mt-1">Confirmed ballots</p>
+                        </div>
+                        <div class="bg-nova-surface border border-nova-border p-6 rounded-xl">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="p-2 bg-purple-500/10 rounded-lg"><i data-lucide="activity" class="w-5 h-5 text-purple-400"></i></div>
+                                <span class="text-[10px] uppercase text-nova-muted font-mono">Turnout</span>
+                            </div>
+                            <h3 id="statTurnout" class="text-3xl font-bold text-white">0%</h3>
+                            <p class="text-xs text-nova-muted mt-1">Participation rate</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-nova-panel border border-nova-border rounded-xl p-6">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wide mb-4">Election Metadata</h3>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-nova-muted block text-xs">Title</span>
+                                <span id="metaTitle" class="text-white font-medium">...</span>
+                            </div>
+                            <div>
+                                <span class="text-nova-muted block text-xs">Organization</span>
+                                <span id="metaOrg" class="text-white font-medium">...</span>
+                            </div>
+                            <div>
+                                <span class="text-nova-muted block text-xs">Mode</span>
+                                <span id="metaMode" class="text-indigo-400 font-mono uppercase">ONLINE</span>
+                            </div>
+                            <div>
+                                <span class="text-nova-muted block text-xs">Created At</span>
+                                <span id="metaCreated" class="text-white font-mono">...</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 2: CANDIDATES -->
+                <section id="sec-candidates" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-white font-bold">Candidate Registry</h3>
+                        <button id="addCandidateBtn" onclick="openModal('candidateModal')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded flex items-center gap-2 transition-transform active:scale-95">
+                            <i data-lucide="plus" class="w-3 h-3"></i> ADD CANDIDATE
+                        </button>
+                    </div>
+                    <div id="candidatesList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Injected via JS -->
+                    </div>
+                </section>
+
+                <!-- SECTION 3: VOTERS -->
+                <section id="sec-voters" class="hidden space-y-6">
+                    <div class="flex justify-between items-end border-b border-nova-border pb-6">
+                        <div>
+                            <h3 class="text-white font-bold mb-1">Voter Roster Management</h3>
+                            <p class="text-xs text-nova-muted">Manage credentials and access for eligible voters.</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button id="bulkEmailBtn" onclick="sendBulkEmails()" class="px-4 py-2 bg-nova-surface border border-nova-border hover:border-emerald-500 text-white text-xs rounded transition-colors flex items-center gap-2">
+                                <i data-lucide="mail" class="w-3 h-3"></i> SEND ALL CREDENTIALS
+                            </button>
+                            <button onclick="openModal('uploadVoterModal')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded flex items-center gap-2 shadow-lg shadow-emerald-900/20 transition-transform active:scale-95">
+                                <i data-lucide="upload" class="w-3 h-3"></i> IMPORT EXCEL
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-nova-panel border border-nova-border rounded-lg overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead class="bg-black text-[10px] uppercase text-nova-muted font-mono">
+                                <tr>
+                                    <th class="p-4">Name</th>
+                                    <th class="p-4">Username</th>
+                                    <th class="p-4">Password</th>
+                                    <th class="p-4">Status</th>
+                                    <th class="p-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="votersTableBody" class="text-sm text-gray-300 divide-y divide-nova-border/50">
+                                <tr><td colspan="5" class="p-8 text-center text-nova-muted">No voters found. Import from Excel to begin.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- SECTION 4: ELECTION CONTROL -->
+                <section id="sec-controls" class="hidden space-y-8 flex flex-col items-center justify-center pt-10">
+                    
+                    <div class="max-w-md w-full text-center">
+                        
+                        <!-- Restored Timer UI -->
+                        <div class="bg-gradient-to-r from-indigo-900/20 to-purple-900/20 border border-indigo-500/30 rounded-xl p-6 mb-8 text-center relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50"></div>
+                            <span class="text-xs font-mono text-indigo-300 uppercase tracking-widest">Election Timer</span>
+                            <div id="countdownDisplay" class="text-4xl md:text-5xl font-bold text-white font-mono my-3 tabular-nums">00:00:00</div>
+                            <p id="timerStatus" class="text-sm text-nova-muted mt-2">Scheduled: <span id="scheduleText" class="text-white font-mono text-xs">...</span></p>
+                        </div>
+
+                        <i data-lucide="terminal-square" class="w-20 h-20 text-indigo-500 mx-auto mb-6"></i>
+                        <h2 class="text-3xl font-bold text-white mb-4">Voting Terminal</h2>
+                        <p class="text-nova-muted text-sm mb-8 leading-relaxed">
+                            The Voting Terminal is required to open the election. It securely generates 5 redundant offline JSON ledgers and monitors incoming votes from remote voters in real-time.
+                        </p>
+
+                        <!-- Ledger Status Indicator -->
+                        <div id="ledgerStatusBox" class="bg-nova-surface p-4 rounded border border-nova-border flex items-center justify-between transition-colors duration-300 mb-8 text-left">
+                            <div class="flex items-center gap-3">
+                                <div id="ledgerIconBg" class="p-2 rounded-full bg-gray-800 text-gray-500">
+                                    <i data-lucide="hard-drive" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-white font-bold">Local Ledger Nodes</p>
+                                    <p id="ledgerStatusText" class="text-[10px] text-nova-muted">Not Initialized</p>
+                                </div>
+                            </div>
+                            <span id="ledgerStatusIcon" class="text-gray-500"><i data-lucide="x-circle" class="w-5 h-5"></i></span>
+                        </div>
+
+                        <div id="lifecycleButtons" class="space-y-3">
+                            <!-- Dynamic Buttons Injected Here -->
+                            <button disabled class="w-full py-4 bg-nova-surface border border-nova-border text-nova-muted rounded opacity-50">Loading Controls...</button>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+
+    <!-- Generic Custom Alert Modal -->
+    <div id="customAlertModal" class="fixed inset-0 z-[100] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center transition-opacity">
+        <div class="bg-nova-panel border border-nova-border p-6 rounded-lg w-full max-w-sm shadow-2xl modal-content text-center">
+            <div class="mx-auto w-12 h-12 bg-indigo-500/20 rounded-full flex items-center justify-center mb-4 text-indigo-400">
+                <i data-lucide="info" class="w-6 h-6"></i>
+            </div>
+            <h3 id="alertTitle" class="text-lg font-bold text-white mb-2">Notice</h3>
+            <p id="alertMessage" class="text-sm text-nova-muted mb-6 whitespace-pre-wrap">Alert message...</p>
+            <button onclick="closeCustomAlert()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-sm font-bold transition-colors">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <!-- Generic Custom Confirm Modal -->
+    <div id="customConfirmModal" class="fixed inset-0 z-[100] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center transition-opacity">
+        <div class="bg-nova-panel border border-nova-border p-6 rounded-lg w-full max-w-sm shadow-2xl modal-content text-center">
+            <div class="mx-auto w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mb-4 text-amber-400">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <h3 id="confirmTitle" class="text-lg font-bold text-white mb-2">Confirm Action</h3>
+            <p id="confirmMessage" class="text-sm text-nova-muted mb-6 whitespace-pre-wrap">Are you sure?</p>
+            <div class="flex gap-3">
+                <button onclick="closeCustomConfirm(false)" class="flex-1 py-2 bg-nova-surface border border-nova-border hover:border-gray-500 text-white rounded text-sm transition-colors">
+                    Cancel
+                </button>
+                <button id="confirmYesBtn" class="flex-1 py-2 bg-red-600 hover:bg-red-500 text-white rounded text-sm font-bold transition-colors">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Voter Modal -->
+    <div id="uploadVoterModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center transition-opacity">
+        <div class="bg-nova-panel border border-nova-border p-8 rounded-xl w-full max-w-lg shadow-2xl modal-content">
+            <h3 class="text-xl font-bold text-white mb-2">Import Voter Roster</h3>
+            <p class="text-sm text-nova-muted mb-6">Upload an Excel (.xlsx) file with columns: <strong>Full Name, Email</strong>.</p>
+            
+            <div class="space-y-6">
+                <div class="flex items-center justify-between bg-nova-surface p-4 rounded border border-nova-border">
+                    <span class="text-sm text-gray-400">Need a template?</span>
+                    <button onclick="downloadTemplate()" class="text-xs text-indigo-400 hover:text-white underline">Download Sample Excel</button>
+                </div>
+
+                <div class="relative border-2 border-dashed border-nova-border rounded-xl p-8 text-center hover:border-indigo-500 transition-colors group">
+                    <input type="file" id="voterExcelInput" accept=".xlsx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFileSelect(this)">
+                    <i data-lucide="file-spreadsheet" class="w-10 h-10 text-gray-600 group-hover:text-indigo-500 mx-auto mb-3 transition-colors"></i>
+                    <p class="text-sm text-white font-medium">Click to Upload Excel</p>
+                    <p id="fileNameDisplay" class="text-xs text-nova-muted mt-1">or drag and drop</p>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button onclick="closeModal('uploadVoterModal')" class="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
+                    <button id="processImportBtn" onclick="processVoterImport()" disabled class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded shadow-lg flex items-center gap-2">
+                        Process & Generate Credentials
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Candidate Modal -->
+    <div id="candidateModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center">
+        <div class="bg-nova-panel border border-nova-border p-6 rounded-lg w-full max-w-md shadow-2xl modal-content">
+            <h3 class="text-lg font-bold text-white mb-4">Add Candidate</h3>
+            <form id="addCandidateForm" class="space-y-4">
+                <div>
+                    <label class="text-xs text-nova-muted block mb-1">Candidate Name</label>
+                    <input type="text" id="candName" required class="w-full bg-nova-surface border border-nova-border text-white px-3 py-2 rounded text-sm focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="text-xs text-nova-muted block mb-1">Designation / Role</label>
+                    <input type="text" id="candRole" class="w-full bg-nova-surface border border-nova-border text-white px-3 py-2 rounded text-sm focus:border-indigo-500 outline-none">
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeModal('candidateModal')" class="text-xs text-gray-400 hover:text-white">Cancel</button>
+                    <button type="submit" id="saveCandidateBtn" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded flex items-center gap-2">Add Candidate</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sending Feedback Modal -->
+    <div id="sendingModal" class="fixed inset-0 z-[60] hidden bg-black/90 backdrop-blur flex items-center justify-center">
+        <div class="text-center modal-content">
+            <div class="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <h3 class="text-white font-bold text-lg">Distributing Credentials...</h3>
+            <p class="text-sm text-nova-muted mt-1">Sending secure emails to voters.</p>
+        </div>
+    </div>
+
+    <!-- Ledger Processing Modal -->
+    <div id="ledgerProcessModal" class="fixed inset-0 z-[70] hidden bg-black/90 backdrop-blur flex items-center justify-center">
+        <div class="text-center modal-content">
+            <div class="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <h3 class="text-white font-bold text-lg" id="ledgerProcessTitle">Initializing Ledger...</h3>
+            <p class="text-sm text-nova-muted mt-1" id="ledgerProcessText">Generating Genesis Block</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, updateDoc, collection, addDoc, query, orderBy, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Secure Configuration Handling
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyBhPMM3vSUiCdJISSiWkQkmJVHcUi86HA0",
+            authDomain: "nova-synthex.firebaseapp.com",
+            projectId: "nova-synthex",
+            storageBucket: "nova-synthex.firebasestorage.app",
+            messagingSenderId: "244535502788",
+            appId: "1:244535502788:web:5b186fff5b79f369b6e691"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- Sandbox Pathing for Preview Compatibility ---
+        const isPreviewEnv = typeof __app_id !== 'undefined';
+        const appId = isPreviewEnv ? __app_id : 'default-app-id';
+        // Adapts dynamically: uses the isolated preview path if in Canvas, or standard local path if testing independently
+        const ELECTIONS_PATH = isPreviewEnv ? `artifacts/${appId}/public/data/elections` : "elections";
+
+        // --- Session ---
+        const session = JSON.parse(sessionStorage.getItem('nova_admin_session')) || { electionId: "preview-election" };
+        const ELECTION_ID = session.electionId;
+        
+        // --- State ---
+        let electionData = null;
+        let timerInterval = null;
+        let confirmCallback = null;
+        let isLedgerInitialized = false;
+
+        // --- Initialization ---
+        document.getElementById('sidebarElectionId').innerText = ELECTION_ID;
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+
+        // --- Auth Setup (MANDATORY BEFORE QUERIES) ---
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Firebase Auth failed:", err);
+                showCustomAlert("Auth Error", "Failed to connect to secure environment. Check your connection.");
+            }
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                 initDashboard(); 
+            }
+        });
+
+        initAuth();
+
+        function initDashboard() {
+            const dbErrorCallback = (err) => {
+                console.error("Database Sync Error:", err);
+                if (err.message.includes("Missing or insufficient permissions") || err.code === 'permission-denied') {
+                    showCustomAlert("Connection Blocked", "Database connection was blocked.\n\n• Turn off Ad-Blockers (like Brave Shields or uBlock).\n• Turn off Strict Tracking Prevention.\n• Ensure Firebase Rules match your active environment path.");
+                }
+            };
+
+            // 1. Listener: Election Data
+            onSnapshot(doc(db, `${ELECTIONS_PATH}/${ELECTION_ID}`), (docSnap) => {
+                if (!docSnap.exists()) return; 
+                electionData = docSnap.data();
+                updateUI(electionData);
+            }, dbErrorCallback);
+
+            // 2. Listener: Check Ledger Init
+            onSnapshot(collection(db, `${ELECTIONS_PATH}/${ELECTION_ID}/ledger`), (snapshot) => {
+                isLedgerInitialized = !snapshot.empty;
+                updateLedgerIndicator(isLedgerInitialized);
+            }, dbErrorCallback);
+
+            // 3. Listener: Voters
+            onSnapshot(collection(db, `${ELECTIONS_PATH}/${ELECTION_ID}/voters`), (snapshot) => {
+                document.getElementById('statTotalVoters').innerText = snapshot.size;
+                let votes = 0;
+                const votersList = [];
+                snapshot.forEach(doc => {
+                    const v = doc.data();
+                    if(v.hasVoted) votes++;
+                    votersList.push({ id: doc.id, ...v });
+                });
+                document.getElementById('statVotesCast').innerText = votes;
+                const turnout = snapshot.size > 0 ? Math.round((votes / snapshot.size)*100) : 0;
+                document.getElementById('statTurnout').innerText = turnout + "%";
+                
+                renderVoterTable(votersList);
+            }, dbErrorCallback);
+
+            // 4. Listener: Candidates
+            onSnapshot(collection(db, `${ELECTIONS_PATH}/${ELECTION_ID}/candidates`), (snapshot) => {
+                const list = document.getElementById('candidatesList');
+                list.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const c = doc.data();
+                    const div = document.createElement('div');
+                    div.className = "bg-nova-surface border border-nova-border p-4 rounded flex justify-between items-center";
+                    div.innerHTML = `
+                        <div>
+                            <h4 class="text-white font-bold text-sm">${c.name}</h4>
+                            <p class="text-xs text-nova-muted">${c.role}</p>
+                        </div>
+                        ${electionData?.status === 'DRAFT' ? '<i data-lucide="edit-2" class="w-4 h-4 text-gray-600 cursor-pointer hover:text-white"></i>' : '<i data-lucide="lock" class="w-3 h-3 text-gray-600"></i>'}
+                    `;
+                    list.appendChild(div);
+                });
+                if(typeof lucide !== 'undefined') lucide.createIcons();
+            }, dbErrorCallback);
+        }
+
+        // --- Custom Alert/Confirm System ---
+        window.showCustomAlert = (title, message) => {
+            document.getElementById('alertTitle').innerText = title;
+            document.getElementById('alertMessage').innerText = message;
+            document.getElementById('customAlertModal').classList.remove('hidden');
+        };
+        window.closeCustomAlert = () => {
+            document.getElementById('customAlertModal').classList.add('hidden');
+        };
+
+        window.showCustomConfirm = (title, message, callback) => {
+            document.getElementById('confirmTitle').innerText = title;
+            document.getElementById('confirmMessage').innerText = message;
+            document.getElementById('customConfirmModal').classList.remove('hidden');
+            confirmCallback = callback;
+        };
+        window.closeCustomConfirm = (result) => {
+            document.getElementById('customConfirmModal').classList.add('hidden');
+            if (result && confirmCallback) confirmCallback();
+            confirmCallback = null;
+        };
+        document.getElementById('confirmYesBtn').onclick = () => closeCustomConfirm(true);
+
+        // --- UI Logic ---
+
+        function updateLedgerIndicator(isInit) {
+            const ledgerBox = document.getElementById('ledgerStatusBox');
+            const ledgerText = document.getElementById('ledgerStatusText');
+            const ledgerIcon = document.getElementById('ledgerStatusIcon');
+            const ledgerIconBg = document.getElementById('ledgerIconBg');
+
+            if (isInit) {
+                // Initialized
+                ledgerBox.classList.remove('border-nova-border');
+                ledgerBox.classList.add('border-emerald-500/30', 'bg-emerald-900/10');
+                
+                ledgerIconBg.classList.remove('bg-gray-800', 'text-gray-500');
+                ledgerIconBg.classList.add('bg-emerald-500/20', 'text-emerald-400');
+                
+                ledgerText.innerText = "Initialized & Active";
+                ledgerText.classList.remove('text-nova-muted');
+                ledgerText.classList.add('text-emerald-400');
+                
+                ledgerIcon.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5 text-emerald-500"></i>`;
+            } else {
+                // Not Initialized
+                ledgerBox.classList.add('border-nova-border');
+                ledgerBox.classList.remove('border-emerald-500/30', 'bg-emerald-900/10');
+                
+                ledgerIconBg.classList.add('bg-gray-800', 'text-gray-500');
+                ledgerIconBg.classList.remove('bg-emerald-500/20', 'text-emerald-400');
+                
+                ledgerText.innerText = "Not Initialized";
+                ledgerText.classList.add('text-nova-muted');
+                ledgerText.classList.remove('text-emerald-400');
+                
+                ledgerIcon.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5 text-gray-500"></i>`;
+            }
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function updateUI(data) {
+            // Header
+            document.getElementById('headerStatusText').innerText = data.status.replace('_', ' ');
+            const badge = document.getElementById('headerStatusBadge');
+            badge.className = `status-badge status-${data.status}`;
+            
+            // Meta
+            document.getElementById('metaTitle').innerText = data.title;
+            document.getElementById('metaOrg').innerText = data.org;
+            document.getElementById('metaCreated').innerText = new Date(data.createdAt).toLocaleDateString();
+
+            // Controls
+            renderLifecycleButtons(data.status);
+            
+            // Start the timer to update UI (Safe Fallback Added)
+            if(data.schedule && data.schedule.start && data.schedule.end) {
+                startTimer(data.schedule.start, data.schedule.end, data.status);
+                document.getElementById('scheduleText').innerText = `${new Date(data.schedule.start).toLocaleString()} - ${new Date(data.schedule.end).toLocaleString()}`;
+            } else {
+                document.getElementById('countdownDisplay').innerText = "MANUAL";
+                document.getElementById('scheduleText').innerText = "No schedule set";
+            }
+            
+            // Locking
+            const isLocked = data.status !== 'DRAFT';
+            document.getElementById('addCandidateBtn').disabled = isLocked;
+            document.getElementById('processImportBtn').disabled = isLocked; 
+            if(isLocked) document.getElementById('addCandidateBtn').classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        // --- Navigation Switcher ---
+        window.switchSection = (sectionId) => {
+            ['overview', 'candidates', 'voters', 'controls'].forEach(id => {
+                document.getElementById(`sec-${id}`).classList.add('hidden');
+                document.getElementById(`nav-${id}`).classList.remove('active');
+            });
+            document.getElementById(`sec-${sectionId}`).classList.remove('hidden');
+            document.getElementById(`nav-${sectionId}`).classList.add('active');
+            
+            const titles = {
+                'overview': 'Dashboard Overview',
+                'candidates': 'Candidate Management',
+                'voters': 'Voter Roster',
+                'controls': 'Voting Terminal Setup'
+            };
+            document.getElementById('pageTitle').innerText = titles[sectionId];
+        };
+
+        window.checkResultsAccess = () => {
+            if (electionData && electionData.status === 'CLOSED') {
+                window.location.href = '../results.html';
+            } else {
+                showCustomAlert("Access Restricted", "Results are only available after the election is CLOSED.");
+            }
+        };
+
+        // --- Election Lifecycle Logic ---
+
+        window.triggerStartSequence = () => {
+            if(!isLedgerInitialized) {
+                const confirmMsg = "This will direct you to the secure Admin Monitor Terminal. There, you will select a local folder to initialize the offline ledger and open voting. Continue?";
+                showCustomConfirm("LAUNCH VOTING TERMINAL", confirmMsg, () => {
+                    window.location.href = 'admin-monitor.html';
+                });
+            } else {
+                updateStatus('LIVE');
+            }
+        };
+
+        window.triggerEndSequence = () => {
+            showCustomConfirm("End Election", "WARNING: This will permanently close voting. Ensure your Voting Terminal is active to finalize the local ledgers. Continue?", async () => {
+                try {
+                    await updateDoc(doc(db, `${ELECTIONS_PATH}/${ELECTION_ID}`), { 
+                        status: 'CLOSED',
+                        closedAt: new Date().toISOString()
+                    });
+                    showCustomAlert("Election Closed", "Voting has been permanently stopped.");
+                } catch (e) {
+                    showCustomAlert("Error", "Could not close election: " + e.message);
+                }
+            });
+        };
+
+        // --- Helper: Status Updates ---
+        window.updateStatus = async (newStatus) => {
+            try {
+                await updateDoc(doc(db, `${ELECTIONS_PATH}/${ELECTION_ID}`), { status: newStatus });
+            } catch (e) {
+                showCustomAlert("System Error", "Failed to update status: " + e.message);
+            }
+        };
+
+        // --- Auto-Start Timer ---
+        function startTimer(start, end, status) {
+            if(timerInterval) clearInterval(timerInterval);
+            
+            const updateTimer = () => {
+                const now = new Date().getTime();
+                const startTime = new Date(start).getTime();
+                const endTime = new Date(end).getTime();
+                let display = "00:00:00";
+                
+                if (status === 'DRAFT') {
+                    const dist = startTime - now;
+                    if(dist > 0) {
+                        display = formatTime(dist);
+                    } else {
+                        display = "READY";
+                    }
+                } else if (status === 'LIVE' || status === 'PAUSED') {
+                    const dist = endTime - now;
+                    if(dist > 0) display = formatTime(dist);
+                    else display = "ENDED";
+                } else {
+                    display = "CLOSED";
+                }
+                
+                const countdownEl = document.getElementById('countdownDisplay');
+                if (countdownEl) {
+                    countdownEl.innerText = display;
+                }
+            };
+            
+            timerInterval = setInterval(updateTimer, 1000);
+            updateTimer();
+        }
+
+        function formatTime(ms) {
+            const h = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((ms % (1000 * 60)) / 1000);
+            return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        }
+
+        // --- Controls UI ---
+        function renderLifecycleButtons(status) {
+            const container = document.getElementById('lifecycleButtons');
+            if(!container) return;
+            
+            container.innerHTML = '';
+
+            const btn = (text, icon, color, action) => `
+                <button onclick="${action}" class="w-full py-4 ${color} text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 transform active:scale-95">
+                    <i data-lucide="${icon}" class="w-5 h-5"></i> ${text}
+                </button>
+            `;
+
+            if (status === 'DRAFT') {
+                container.innerHTML = btn("LAUNCH VOTING TERMINAL", "power", "bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500", "triggerStartSequence()");
+            } else if (status === 'LIVE') {
+                let html = btn("PAUSE VOTING", "pause", "bg-amber-600 hover:bg-amber-500", "updateStatus('PAUSED')");
+                html += `<div class="mt-3">${btn("OPEN LIVE MONITOR", "activity", "bg-indigo-600 hover:bg-indigo-500", "window.location.href='admin-monitor.html'")}</div>`;
+                html += `<div class="mt-3">${btn("END ELECTION", "square", "bg-red-600 hover:bg-red-500", "triggerEndSequence()")}</div>`;
+                container.innerHTML = html;
+            } else if (status === 'PAUSED') {
+                container.innerHTML = `
+                    ${btn("RESUME VOTING", "play", "bg-emerald-600 hover:bg-emerald-500", "updateStatus('LIVE')")}
+                    <div class="mt-3">
+                        ${btn("OPEN LIVE MONITOR", "activity", "bg-indigo-600 hover:bg-indigo-500", "window.location.href='admin-monitor.html'")}
+                    </div>
+                    <div class="mt-3">
+                        ${btn("END ELECTION", "square", "bg-red-600 hover:bg-red-500", "triggerEndSequence()")}
+                    </div>
+                `;
+            } else if (status === 'CLOSED') {
+                container.innerHTML = `
+                    <div class="p-4 bg-red-900/10 border border-red-500/20 rounded text-center">
+                        <p class="text-red-400 font-bold">ELECTION FINALIZED</p>
+                        <button onclick="checkResultsAccess()" class="mt-2 text-xs text-white underline">View Results</button>
+                    </div>
+                `;
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // --- Voter Management (Excel & Creds) ---
+
+        window.downloadTemplate = () => {
+            const csvContent = "data:text/csv;charset=utf-8,Full Name,Email,Department\nJohn Doe,john@example.com,IT\nJane Smith,jane@example.com,HR";
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "nova_voter_template.csv");
+            document.body.appendChild(link);
+            link.click();
+        };
+
+        window.handleFileSelect = (input) => {
+            const file = input.files[0];
+            if (file) {
+                document.getElementById('fileNameDisplay').innerText = file.name;
+                document.getElementById('processImportBtn').disabled = false;
+            }
+        };
+
+        window.processVoterImport = () => {
+            const btn = document.getElementById('processImportBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Processing...`;
+            btn.disabled = true;
+
+            const input = document.getElementById('voterExcelInput');
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet); 
+
+                    // Generate Credentials
+                    const batch = writeBatch(db);
+                    let count = 0;
+
+                    jsonData.forEach(row => {
+                        const name = row['Full Name'];
+                        const email = row['Email'];
+                        if (name && email) {
+                            const username = name.split(' ')[0].toLowerCase() + Math.floor(1000 + Math.random() * 9000);
+                            const password = Math.random().toString(36).slice(-8); 
+                            
+                            // Safe Path Interpolation
+                            const docRef = doc(collection(db, `${ELECTIONS_PATH}/${ELECTION_ID}/voters`));
+                            batch.set(docRef, {
+                                name: name,
+                                email: email,
+                                username: username,
+                                password: password, 
+                                hasVoted: false,
+                                department: row['Department'] || 'General'
+                            });
+                            count++;
+                        }
+                    });
+
+                    await batch.commit();
+                    closeModal('uploadVoterModal');
+                    showCustomAlert("Import Complete", `Successfully imported ${count} voters with generated credentials.`);
+                    input.value = '';
+                } catch (err) {
+                    showCustomAlert("Import Failed", "Error processing file: " + err.message);
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        function renderVoterTable(voters) {
+            const tbody = document.getElementById('votersTableBody');
+            if (voters.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-nova-muted">No voters found. Import from Excel to begin.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = voters.map(v => `
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td class="p-4 text-white font-medium">${v.name}</td>
+                    <td class="p-4 text-nova-muted font-mono text-xs">${v.username}</td>
+                    <td class="p-4 font-mono text-xs">
+                        <span class="password-mask blur-sm cursor-pointer hover:blur-none transition-all text-indigo-300" title="Hover to reveal">${v.password}</span>
+                    </td>
+                    <td class="p-4">
+                        ${v.hasVoted 
+                            ? '<span class="text-xs text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded">Voted</span>' 
+                            : '<span class="text-xs text-gray-500 border border-gray-700 px-2 py-0.5 rounded">Pending</span>'}
+                    </td>
+                    <td class="p-4 text-right">
+                        <button onclick="sendCredentialEmail('${v.name}')" class="text-xs text-indigo-400 hover:text-white border border-indigo-500/30 hover:bg-indigo-500/20 px-3 py-1 rounded transition-all">
+                            Send
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.sendCredentialEmail = (name) => {
+            showCustomAlert("Email Sent", `[SIMULATION] Secure credential email sent to ${name}.`);
+        };
+
+        window.sendBulkEmails = () => {
+            const modal = document.getElementById('sendingModal');
+            modal.classList.remove('hidden');
+            
+            // Simulate delay for bulk sending
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                showCustomAlert("Bulk Action", "All credentials have been queued for delivery.");
+            }, 2000);
+        };
+
+        // --- Modals ---
+        window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
+        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+
+        // --- Forms ---
+        document.getElementById('addCandidateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('saveCandidateBtn');
+            const originalText = btn.innerText;
+            btn.innerHTML = `<div class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Saving...`;
+            btn.disabled = true;
+
+            const name = document.getElementById('candName').value;
+            const role = document.getElementById('candRole').value;
+            
+            try {
+                await addDoc(collection(db, `${ELECTIONS_PATH}/${ELECTION_ID}/candidates`), {
+                    name, role, voteCount: 0
+                });
+                e.target.reset();
+                closeModal('candidateModal');
+            } catch (err) {
+                showCustomAlert("Error", "Failed to add candidate.");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        // --- Utils ---
+        window.copyId = () => {
+            navigator.clipboard.writeText(ELECTION_ID);
+            const btn = document.querySelector('button[onclick="copyId()"]');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i>`;
+            setTimeout(() => { btn.innerHTML = originalHTML; if(typeof lucide !== 'undefined') lucide.createIcons(); }, 2000);
+        };
+        
+        window.logout = () => {
+            sessionStorage.removeItem('nova_admin_session');
+            window.location.href = 'election-login.html';
+        };
+
+    </script>
+</body>
+</html>

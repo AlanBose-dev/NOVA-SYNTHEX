@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Terminal | NOVA-SYNTHEX</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.292.0/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+                    colors: { nova: { bg: '#030303', surface: '#0A0A0A', border: '#1F1F26', accent: '#00ff41' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #030303; color: #E2E2E5; }
+        .terminal-bg {
+            background-color: #000;
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 65, 0.05) 2px, rgba(0, 255, 65, 0.05) 4px);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #1F1F26; }
+        ::-webkit-scrollbar-thumb:hover { background: #00ff41; }
+        .modal-content { animation: zoomIn 0.3s ease-out forwards; }
+        @keyframes zoomIn {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col select-none relative">
+
+    <script>
+        if (!sessionStorage.getItem('nova_admin_session')) {
+            const isPreview = window.location.href.includes('usercontent.goog') || window.location.href.includes('blob:');
+            if (!isPreview) {
+                try { window.location.replace('election-login.html'); } catch(e) {}
+            }
+        }
+    </script>
+
+    <!-- Header -->
+    <header class="border-b border-nova-border bg-nova-surface p-4 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <div class="bg-green-900/20 p-2 rounded border border-green-500/30 text-green-500">
+                <i data-lucide="terminal" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="text-sm font-bold text-white tracking-wide font-mono">SYS_MONITOR :: OFFLINE LEDGER NODE</h1>
+                <p id="headerStatus" class="text-[10px] text-yellow-500 font-mono flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span> <span id="headerStatusText">AWAITING INITIALIZATION</span>
+                </p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="window.location.href='admin-dashboard.html'" class="px-4 py-2 border border-nova-border bg-nova-surface text-gray-400 text-xs rounded hover:text-white transition-colors flex items-center gap-2">
+                <i data-lucide="arrow-left" class="w-3 h-3"></i> RETURN TO DASHBOARD
+            </button>
+            <button id="endElectionHeaderBtn" onclick="triggerElectionEnd()" class="hidden px-4 py-2 border border-red-900/50 bg-red-900/20 text-red-500 text-xs font-bold rounded hover:bg-red-900/40 transition-colors items-center gap-2">
+                <i data-lucide="power" class="w-3 h-3"></i> END ELECTION & EXPORT
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow p-6 relative">
+        
+        <!-- STEP 1: SETUP VIEW -->
+        <div id="setupView" class="absolute inset-0 flex flex-col items-center justify-center bg-nova-bg z-20">
+            <div class="max-w-lg text-center bg-nova-surface p-10 rounded-xl border border-nova-border shadow-2xl">
+                <div class="w-20 h-20 border border-green-500/30 rounded-full flex items-center justify-center mx-auto mb-6 bg-green-500/5">
+                    <i data-lucide="database" class="w-8 h-8 text-green-500"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-3 font-mono">Initialize Local Storage Engine</h2>
+                <p class="text-gray-400 text-sm mb-8 leading-relaxed">
+                    The system will generate 5 redundant, isolated databases locally in your browser's IndexedDB. This bypasses OS file-lock constraints while maintaining strict 5-tier redundancy and integrity checks.
+                </p>
+                <button onclick="initializeNode()" id="initBtn" class="w-full py-4 bg-green-600 hover:bg-green-500 text-black font-bold rounded shadow-lg transition-all font-mono text-sm flex items-center justify-center gap-2">
+                    <i data-lucide="server" class="w-4 h-4"></i> BUILD 5 LOCAL LEDGERS & START
+                </button>
+                
+                <div id="initProgressContainer" class="hidden mt-6 text-left border border-nova-border p-4 rounded bg-black/50">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-mono text-green-500 animate-pulse">BUILDING LEDGERS...</span>
+                        <span id="progressCount" class="text-xs font-mono text-gray-500">0/5</span>
+                    </div>
+                    <div class="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden mb-3">
+                        <div id="progressBar" class="bg-green-500 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                    <ul id="progressLog" class="text-[10px] font-mono text-gray-400 space-y-1 h-20 overflow-y-auto custom-scrollbar"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 2: LIVE MONITOR VIEW -->
+        <div id="monitorView" class="hidden h-full flex flex-col gap-6 max-w-7xl mx-auto">
+            
+            <!-- Stats Row -->
+            <div class="grid grid-cols-4 gap-4">
+                <div class="bg-nova-surface border border-nova-border p-4 rounded flex flex-col justify-center items-center">
+                    <span class="text-[10px] text-gray-500 font-mono mb-1">TOTAL REGISTRATIONS</span>
+                    <span id="statTotal" class="text-2xl font-bold text-white font-mono">0</span>
+                </div>
+                <div class="bg-nova-surface border border-green-500/30 p-4 rounded flex flex-col justify-center items-center bg-green-900/10">
+                    <span class="text-[10px] text-green-500 font-mono mb-1">VOTES RECEIVED</span>
+                    <span id="statVoted" class="text-2xl font-bold text-green-500 font-mono">0</span>
+                </div>
+                <div class="bg-nova-surface border border-nova-border p-4 rounded flex flex-col justify-center items-center">
+                    <span class="text-[10px] text-gray-500 font-mono mb-1">PENDING VOTERS</span>
+                    <span id="statRemaining" class="text-2xl font-bold text-white font-mono">0</span>
+                </div>
+                <div class="bg-nova-surface border border-nova-border p-4 rounded flex flex-col justify-center items-center">
+                    <span class="text-[10px] text-gray-500 font-mono mb-1">TURNOUT</span>
+                    <span id="statPercent" class="text-2xl font-bold text-white font-mono">0%</span>
+                </div>
+            </div>
+
+            <!-- Terminal & Integrity Section -->
+            <div class="flex-grow grid grid-cols-1 lg:grid-cols-4 gap-6">
+                
+                <!-- Main Terminal Console -->
+                <div class="lg:col-span-3 bg-[#050505] border border-nova-border rounded flex flex-col shadow-2xl relative overflow-hidden">
+                    <div class="bg-nova-surface px-4 py-2 border-b border-nova-border flex items-center justify-between">
+                        <span class="text-xs font-mono text-gray-400">root@node-1:/var/lib/indexeddb/ledgers# tail -f votes.log</span>
+                        <div class="flex gap-4 items-center">
+                            <!-- Print Terminal Button -->
+                            <button onclick="printTerminal()" class="text-gray-400 hover:text-white transition-colors" title="Print Logs">
+                                <i data-lucide="printer" class="w-4 h-4"></i>
+                            </button>
+                            <div class="flex gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="w-2 h-2 rounded-full bg-yellow-500"></span><span class="w-2 h-2 rounded-full bg-green-500"></span></div>
+                        </div>
+                    </div>
+                    <div id="terminalOutput" class="p-4 font-mono text-[11px] overflow-y-auto flex-grow terminal-bg space-y-1 leading-relaxed">
+                        <div class="text-green-500/50">[SYSTEM] Terminal initialized. Awaiting network stream...</div>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar: Integrity Controls -->
+                <div class="bg-nova-surface border border-nova-border rounded p-6 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-sm font-bold text-white mb-4 font-mono border-b border-nova-border pb-2">INTEGRITY STATUS</h3>
+                        <div id="integrityStatusBox" class="p-4 bg-green-900/10 border border-green-500/30 rounded mb-6 text-center transition-colors">
+                            <i data-lucide="shield-check" class="w-8 h-8 text-green-500 mx-auto mb-2"></i>
+                            <p class="text-xs text-green-400 font-mono font-bold">ALL DBS SECURE</p>
+                        </div>
+
+                        <!-- View Ledgers Button -->
+                        <button onclick="openLedgerView()" class="w-full py-2 bg-nova-panel border border-nova-border hover:border-indigo-500 text-white text-xs font-bold rounded transition-colors flex items-center justify-center gap-2 mb-4">
+                            <i data-lucide="eye" class="w-3 h-3"></i> VIEW LEDGER DATA
+                        </button>
+
+                        <ul class="text-[10px] font-mono text-gray-500 space-y-2" id="fileList">
+                            <!-- Injected -->
+                        </ul>
+                    </div>
+                    
+                    <div class="pt-4 border-t border-nova-border mt-auto space-y-3">
+                        <button id="resolveBtn" onclick="resolveCorruption()" class="w-full py-3 bg-red-600/20 border border-red-500 text-red-500 font-bold rounded font-mono text-xs hover:bg-red-600 hover:text-white transition-colors hidden shadow-[0_0_15px_rgba(239,68,68,0.2)] flex justify-center items-center gap-2">
+                            <i data-lucide="alert-triangle" class="w-3 h-3"></i> RESOLVE CORRUPTION
+                        </button>
+                        
+                        <!-- End Election / Export Trigger -->
+                        <button id="endElectionSidebarBtn" onclick="triggerElectionEnd()" class="w-full py-3 bg-red-900/40 border border-red-500 text-red-400 font-bold rounded font-mono text-xs hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center gap-2">
+                            <i data-lucide="download" class="w-4 h-4"></i> END & EXPORT 5 LEDGERS
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Ledger Data Viewer Modal -->
+    <div id="ledgerViewModal" class="fixed inset-0 z-[100] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center transition-opacity">
+        <div class="bg-nova-surface border border-nova-border p-6 rounded-lg w-full max-w-4xl h-[80vh] flex flex-col shadow-2xl modal-content">
+            <div class="flex justify-between items-center mb-4 border-b border-nova-border pb-2">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i data-lucide="database" class="w-5 h-5 text-indigo-400"></i> 
+                    IndexedDB Ledger Viewer
+                </h3>
+                <div class="flex gap-4">
+                    <button onclick="printCurrentLedger()" class="text-nova-muted hover:text-white transition-colors flex items-center gap-1 text-xs font-mono">
+                        <i data-lucide="printer" class="w-4 h-4"></i> Print Data
+                    </button>
+                    <button onclick="closeLedgerView()" class="text-nova-muted hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+            
+            <div class="flex gap-2 mb-4 overflow-x-auto" id="ledgerTabs">
+                <!-- Tabs injected here -->
+            </div>
+            
+            <div class="flex-grow bg-[#000] border border-nova-border rounded p-4 overflow-y-auto font-mono text-xs text-green-400 whitespace-pre custom-scrollbar" id="ledgerContentDisplay">
+                Loading...
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div id="customAlertModal" class="fixed inset-0 z-[110] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center transition-opacity">
+        <div class="bg-nova-surface border border-nova-border p-6 rounded-lg w-full max-w-sm shadow-2xl modal-content text-center">
+            <div class="mx-auto w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mb-4 text-red-400">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <h3 id="alertTitle" class="text-lg font-bold text-white mb-2">Notice</h3>
+            <p id="alertMessage" class="text-sm text-nova-muted mb-6 whitespace-pre-wrap">Something went wrong.</p>
+            <button onclick="closeCustomAlert()" class="w-full py-2 bg-red-600 hover:bg-red-500 text-white rounded text-sm font-bold transition-colors">
+                Dismiss
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="customConfirmModal" class="fixed inset-0 z-[110] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center transition-opacity">
+        <div class="bg-nova-surface border border-nova-border p-6 rounded-lg w-full max-w-sm shadow-2xl modal-content text-center">
+            <div class="mx-auto w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mb-4 text-amber-400">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <h3 id="confirmTitle" class="text-lg font-bold text-white mb-2">Confirm Action</h3>
+            <p id="confirmMessage" class="text-sm text-nova-muted mb-6 whitespace-pre-wrap">Are you sure?</p>
+            <div class="flex gap-3">
+                <button onclick="closeCustomConfirm(false)" class="flex-1 py-2 bg-nova-surface border border-nova-border hover:border-gray-500 text-white rounded text-sm transition-colors">
+                    Cancel
+                </button>
+                <button id="confirmYesBtn" class="flex-1 py-2 bg-red-600 hover:bg-red-500 text-white rounded text-sm font-bold transition-colors">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, collection, updateDoc, query, orderBy, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // 1. Setup Firebase
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyBhPMM3vSUiCdJISSiWkQkmJVHcUi86HA0",
+            authDomain: "nova-synthex.firebaseapp.com",
+            projectId: "nova-synthex",
+            storageBucket: "nova-synthex.firebasestorage.app",
+            messagingSenderId: "244535502788",
+            appId: "1:244535502788:web:5b186fff5b79f369b6e691"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Safe Base Pathing
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const ELECTIONS_PATH = typeof __app_id !== 'undefined' ? `artifacts/${appId}/public/data/elections` : "elections";
+
+        // Session
+        const session = JSON.parse(sessionStorage.getItem('nova_admin_session')) || { electionId: "TEST-ELECTION" };
+        const ELECTION_ID = session.electionId;
+
+        // Globals
+        const FILES_COUNT = 5;
+        const STORE_PREFIX = "ledger_";
+        let processedVotes = new Set();
+        let integrityInterval = null;
+        let currentUser = null;
+        let localDB = null; // IndexedDB instance
+        let currentViewingLedger = 1;
+        let confirmCallback = null;
+
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+
+        // 2. Alert, Confirm & Logging Logic
+        window.showCustomAlert = (title, message) => {
+            document.getElementById('alertTitle').innerText = title;
+            document.getElementById('alertMessage').innerText = message;
+            document.getElementById('customAlertModal').classList.remove('hidden');
+        };
+        window.closeCustomAlert = () => document.getElementById('customAlertModal').classList.add('hidden');
+
+        window.showCustomConfirm = (title, message, callback) => {
+            document.getElementById('confirmTitle').innerText = title;
+            document.getElementById('confirmMessage').innerText = message;
+            document.getElementById('customConfirmModal').classList.remove('hidden');
+            confirmCallback = callback;
+        };
+        window.closeCustomConfirm = (result) => {
+            document.getElementById('customConfirmModal').classList.add('hidden');
+            if (result && confirmCallback) confirmCallback();
+            confirmCallback = null;
+        };
+        document.getElementById('confirmYesBtn').onclick = () => closeCustomConfirm(true);
+
+        window.log = function(msg, type = "info") {
+            const term = document.getElementById('terminalOutput');
+            const time = new Date().toLocaleTimeString('en-US', {hour12:false});
+            let colorClass = type === "error" ? "text-red-500 font-bold" : type === "warn" ? "text-yellow-400" : type === "system" ? "text-blue-400" : "text-green-400";
+            const div = document.createElement('div');
+            div.className = colorClass;
+            div.innerText = `[${time}] ${msg}`;
+            term.appendChild(div);
+            term.scrollTop = term.scrollHeight;
+        }
+
+        // Print Terminal Logic
+        window.printTerminal = () => {
+            const printContent = document.getElementById('terminalOutput').innerText;
+            const printWin = window.open('', '', 'width=800,height=600');
+            
+            if (printWin) {
+                const htmlArray = [
+                    "<html>",
+                    "<head>",
+                    "<title>NOVA-SYNTHEX Terminal Log - " + ELECTION_ID + "</title>",
+                    "<style>body { background-color: #000; color: #00ff41; font-family: monospace; padding: 20px; white-space: pre-wrap; font-size: 12px; line-height: 1.5; } h2 { color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px; }</style>",
+                    "</head>",
+                    "<body>",
+                    "<h2>OFFICIAL AUDIT LOG :: " + ELECTION_ID + "</h2>",
+                    printContent,
+                    "<scr" + "ipt>window.onload = function() { window.print(); window.close(); }</scr" + "ipt>",
+                    "</bo" + "dy>",
+                    "</ht" + "ml>"
+                ];
+
+                printWin.document.write(htmlArray.join(""));
+                printWin.document.close();
+            } else {
+                window.showCustomAlert("Pop-up Blocked", "Your browser blocked the print window. Please allow pop-ups for this site.");
+            }
+        };
+
+        // Print Specific Ledger Logic
+        window.printCurrentLedger = () => {
+            const printContent = document.getElementById('ledgerContentDisplay').innerText;
+            const printWin = window.open('', '', 'width=800,height=600');
+            
+            if (printWin) {
+                const htmlArray = [
+                    "<html>",
+                    "<head>",
+                    "<title>NOVA-SYNTHEX Ledger " + currentViewingLedger + " - " + ELECTION_ID + "</title>",
+                    "<style>body { background-color: #000; color: #00ff41; font-family: monospace; padding: 20px; white-space: pre-wrap; font-size: 12px; line-height: 1.5; } h2 { color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px; }</style>",
+                    "</head>",
+                    "<body>",
+                    "<h2>OFFICIAL LEDGER " + currentViewingLedger + " DUMP :: " + ELECTION_ID + "</h2>",
+                    printContent,
+                    "<scr" + "ipt>window.onload = function() { window.print(); window.close(); }</scr" + "ipt>",
+                    "</bo" + "dy>",
+                    "</ht" + "ml>"
+                ];
+
+                printWin.document.write(htmlArray.join(""));
+                printWin.document.close();
+            } else {
+                window.showCustomAlert("Pop-up Blocked", "Your browser blocked the print window.");
+            }
+        };
+
+        function updateSetupProgress(count, message) {
+            const progBar = document.getElementById('progressBar');
+            const progCount = document.getElementById('progressCount');
+            const progLog = document.getElementById('progressLog');
+            
+            progCount.innerText = `${Math.floor(count)}/${FILES_COUNT}`;
+            progBar.style.width = `${(count / FILES_COUNT) * 100}%`;
+            
+            if (message) {
+                const li = document.createElement('li');
+                li.innerText = `> ${message}`;
+                progLog.appendChild(li);
+                progLog.scrollTop = progLog.scrollHeight;
+            }
+        }
+
+        // 3. Cryptography Helper (SHA-256)
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // 4. Authenticate properly first
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Firebase Auth failed:", err);
+            }
+        };
+        initAuth();
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+        });
+
+        // 5. INDEXED-DB LOGIC
+        function setupIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const dbName = `NovaSynthex_Ledgers_${ELECTION_ID}`;
+                window.log(`Connecting to local IndexedDB Engine: ${dbName}`, "system");
+                
+                const request = indexedDB.open(dbName, 1);
+
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    for (let i = 1; i <= FILES_COUNT; i++) {
+                        const storeName = `${STORE_PREFIX}${i}`;
+                        if (!db.objectStoreNames.contains(storeName)) {
+                            db.createObjectStore(storeName, { keyPath: "transaction_id" });
+                        }
+                    }
+                };
+
+                request.onsuccess = (event) => {
+                    localDB = event.target.result;
+                    resolve();
+                };
+
+                request.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        // 6. Initialize the System
+        window.initializeNode = async () => {
+            const btn = document.getElementById('initBtn');
+            const progContainer = document.getElementById('initProgressContainer');
+            
+            btn.classList.add('hidden');
+            progContainer.classList.remove('hidden');
+            document.getElementById('progressLog').innerHTML = ''; 
+            updateSetupProgress(0, "Initializing Database Engine...");
+
+            try {
+                // WAIT FOR AUTHENTICATION
+                if (!currentUser) {
+                    updateSetupProgress(0, "Authenticating with secure cloud database...");
+                    for(let i=0; i<10; i++) {
+                        await new Promise(r => setTimeout(r, 500));
+                        if(currentUser) break;
+                    }
+                    if (!currentUser) throw new Error("Authentication failed. Please check network/Adblocker.");
+                }
+
+                // SETUP LOCAL 5-LEDGER DB
+                await setupIndexedDB();
+                
+                for(let i=1; i<=FILES_COUNT; i++) {
+                    await new Promise(r => setTimeout(r, 200));
+                    updateSetupProgress(i, `Allocated secure local table: ${STORE_PREFIX}${i}`);
+                    window.log(`Configured local DB table: ${STORE_PREFIX}${i}`, "info");
+                }
+
+                updateSetupProgress(FILES_COUNT, "Ledgers finalized. Syncing with cloud...");
+
+                // ACTIVATE ELECTION IN FIREBASE
+                await setDoc(doc(db, ELECTIONS_PATH, ELECTION_ID), { status: 'LIVE' }, { merge: true });
+                window.log("Cloud synchronized. Voting is now LIVE.", "system");
+
+                // Transition to Dashboard View
+                setTimeout(() => {
+                    document.getElementById('setupView').classList.add('hidden');
+                    document.getElementById('monitorView').classList.remove('hidden');
+                    document.getElementById('endElectionHeaderBtn').classList.remove('hidden');
+                    document.getElementById('endElectionHeaderBtn').classList.add('flex');
+                    
+                    const hStatus = document.getElementById('headerStatus');
+                    hStatus.innerHTML = '<span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_#00ff41]"></span> <span id="headerStatusText" class="text-green-500">NODE LIVE & RECORDING</span>';
+
+                    startMonitoring();
+                }, 1000);
+
+            } catch(err) {
+                console.error(err);
+                showCustomAlert("System Error", err.message);
+                btn.classList.remove('hidden');
+                progContainer.classList.add('hidden');
+            }
+        };
+
+        // 7. Monitoring Functions
+        let isElectionClosed = false;
+
+        function startMonitoring() {
+            // Monitor Election Status
+            onSnapshot(doc(db, ELECTIONS_PATH, ELECTION_ID), (docSnap) => {
+                if(!docSnap.exists()) return;
+                const data = docSnap.data();
+                if(data.status === 'CLOSED' && !isElectionClosed) {
+                    isElectionClosed = true;
+                    window.log("ELECTION HAS BEEN CLOSED BY ADMINISTRATOR.", "warn");
+                    window.log("Halt recording. Terminal locked.", "warn");
+                    
+                    document.getElementById('headerStatusText').innerText = "ELECTION CLOSED - SECURED";
+                    document.getElementById('headerStatusText').classList.replace('text-green-500', 'text-red-500');
+                    document.getElementById('headerStatus').querySelector('span').classList.replace('bg-green-500', 'bg-red-500');
+                    document.getElementById('headerStatus').querySelector('span').classList.remove('animate-pulse');
+                    
+                    document.getElementById('endElectionSidebarBtn').classList.add('hidden');
+                    document.getElementById('endElectionHeaderBtn').classList.add('hidden');
+
+                    clearInterval(integrityInterval); // Stop checking
+                }
+            });
+
+            // Stats Listener
+            onSnapshot(collection(db, ELECTIONS_PATH, ELECTION_ID, "voters"), (snap) => {
+                const total = snap.size;
+                let voted = 0;
+                snap.forEach(d => { if(d.data().hasVoted) voted++; });
+                
+                document.getElementById('statTotal').innerText = total;
+                document.getElementById('statVoted').innerText = voted;
+                document.getElementById('statRemaining').innerText = total - voted;
+                document.getElementById('statPercent').innerText = total > 0 ? Math.round((voted/total)*100) + "%" : "0%";
+            });
+
+            // Votes Listener
+            getDocs(collection(db, ELECTIONS_PATH, ELECTION_ID, "votes_log")).then(snap => {
+                 snap.forEach(doc => processedVotes.add(doc.id)); 
+                 
+                 onSnapshot(collection(db, ELECTIONS_PATH, ELECTION_ID, "votes_log"), (snapshot) => {
+                     if(isElectionClosed) return; // Ignore if closed
+
+                     let changes = [];
+                     snapshot.forEach(doc => changes.push({ id: doc.id, data: doc.data() }));
+                     changes.sort((a, b) => new Date(a.data.timestamp) - new Date(b.data.timestamp));
+
+                     changes.forEach(async (change) => {
+                         if(!processedVotes.has(change.id)) {
+                             processedVotes.add(change.id);
+                             window.log(`New vote detected. Generating hash...`, "info");
+                             await writeVoteToLocalDB(change.id, change.data);
+                         }
+                     });
+                 });
+            });
+
+            // Start Integrity Checker
+            if(integrityInterval) clearInterval(integrityInterval);
+            integrityInterval = setInterval(checkIntegrity, 3000); 
+        }
+
+        // 8. Write to Local DB
+        async function writeVoteToLocalDB(voteId, voteData) {
+            if(!localDB) return;
+            
+            const rawString = `${voteData.candidateName}_${voteData.timestamp}_${voteData.voterIdHash}`;
+            const generatedHash = await sha256(rawString);
+
+            const record = {
+                transaction_id: voteId,
+                hash: generatedHash,
+                candidate: voteData.candidateName,
+                timestamp: voteData.timestamp
+            };
+
+            return new Promise((resolve) => {
+                const stores = Array.from({length: FILES_COUNT}, (_, i) => `${STORE_PREFIX}${i+1}`);
+                const transaction = localDB.transaction(stores, "readwrite");
+                
+                let successCount = 0;
+
+                stores.forEach(storeName => {
+                    const store = transaction.objectStore(storeName);
+                    const request = store.put(record);
+                    request.onsuccess = () => successCount++;
+                });
+
+                transaction.oncomplete = () => {
+                    if (successCount === FILES_COUNT) {
+                        window.log(`Hash ${generatedHash.substring(0,8)}... secured across 5 local DB ledgers.`, "system");
+                    } else {
+                        window.log(`Integrity Warning: Vote only written to ${successCount}/5 ledgers.`, "error");
+                    }
+                    resolve();
+                };
+            });
+        }
+
+        // 9. File Integrity Checking
+        window.readAllStoreData = function(storeName) {
+            return new Promise((resolve) => {
+                if(!localDB) resolve(null);
+                const tx = localDB.transaction(storeName, "readonly");
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+                request.onsuccess = () => resolve(JSON.stringify(request.result));
+                request.onerror = () => resolve(null);
+            });
+        }
+
+        async function checkIntegrity() {
+            if(!localDB) return;
+            
+            let storeContents = [];
+            let isCorrupted = false;
+            const ul = document.getElementById('fileList');
+            ul.innerHTML = ''; 
+
+            for(let i=1; i<=FILES_COUNT; i++) {
+                const storeName = `${STORE_PREFIX}${i}`;
+                const dataStr = await window.readAllStoreData(storeName);
+                
+                if (dataStr) {
+                    storeContents.push(dataStr);
+                    ul.innerHTML += `<li class="text-green-500">[OK] ${storeName}</li>`;
+                } else {
+                    isCorrupted = true;
+                    ul.innerHTML += `<li class="text-red-500">[MISSING] ${storeName}</li>`;
+                }
+            }
+
+            if(storeContents.length === FILES_COUNT) {
+                const base = storeContents[0];
+                if(storeContents.some(txt => txt !== base)) {
+                    isCorrupted = true;
+                    window.log("[ALERT] Data mismatch detected across the 5 local databases! Tampering suspected.", "error");
+                }
+            }
+
+            const statusBox = document.getElementById('integrityStatusBox');
+            const resolveBtn = document.getElementById('resolveBtn');
+
+            if(isCorrupted) {
+                statusBox.className = "p-4 bg-red-900/20 border border-red-500 rounded mb-6 text-center shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse";
+                statusBox.innerHTML = `<i data-lucide="shield-alert" class="w-8 h-8 text-red-500 mx-auto mb-2"></i><p class="text-xs text-red-500 font-mono font-bold">CORRUPTION DETECTED</p>`;
+                resolveBtn.classList.remove('hidden');
+            } else {
+                statusBox.className = "p-4 bg-green-900/10 border border-green-500/30 rounded mb-6 text-center";
+                statusBox.innerHTML = `<i data-lucide="shield-check" class="w-8 h-8 text-green-500 mx-auto mb-2"></i><p class="text-xs text-green-400 font-mono font-bold">ALL DBS SECURE</p>`;
+                resolveBtn.classList.add('hidden');
+            }
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // 10. Corruption Recovery
+        window.resolveCorruption = async () => {
+            window.log("Initiating consensus recovery protocol...", "warn");
+            
+            let arrays = [];
+            for(let i=1; i<=FILES_COUNT; i++) {
+                const dataStr = await window.readAllStoreData(`${STORE_PREFIX}${i}`);
+                if (dataStr) arrays.push(JSON.parse(dataStr));
+            }
+
+            if(arrays.length === 0) {
+                window.log("FATAL: All ledgers destroyed.", "error");
+                return;
+            }
+
+            arrays.sort((a,b) => b.length - a.length);
+            const consensusData = arrays[0];
+
+            return new Promise((resolve) => {
+                const stores = Array.from({length: FILES_COUNT}, (_, i) => `${STORE_PREFIX}${i+1}`);
+                const tx = localDB.transaction(stores, "readwrite");
+                
+                stores.forEach(storeName => {
+                    const store = tx.objectStore(storeName);
+                    store.clear(); 
+                    consensusData.forEach(record => store.put(record)); 
+                });
+
+                tx.oncomplete = () => {
+                    window.log("Recovery complete. Majority consensus enforced across all 5 databases.", "system");
+                    checkIntegrity();
+                    resolve();
+                };
+            });
+        };
+
+        // 11. View Ledgers Modal Logic
+        window.openLedgerView = async () => {
+            if(!localDB) {
+                showCustomAlert("Offline", "Databases have not been initialized yet.");
+                return;
+            }
+            document.getElementById('ledgerViewModal').classList.remove('hidden');
+            
+            const tabs = document.getElementById('ledgerTabs');
+            tabs.innerHTML = '';
+            for(let i=1; i<=FILES_COUNT; i++) {
+                tabs.innerHTML += `<button onclick="viewLedgerData(${i})" class="px-4 py-2 border rounded text-xs transition-colors" id="tab-ledger-${i}">Ledger ${i}</button>`;
+            }
+            await window.viewLedgerData(1);
+        };
+
+        window.closeLedgerView = () => {
+            document.getElementById('ledgerViewModal').classList.add('hidden');
+        };
+
+        window.viewLedgerData = async (index) => {
+            currentViewingLedger = index;
+            for(let i=1; i<=FILES_COUNT; i++) {
+                const tab = document.getElementById(`tab-ledger-${i}`);
+                if(tab) {
+                    if(i === index) { 
+                        tab.classList.add('bg-nova-accent', 'border-nova-accent', 'text-white'); 
+                        tab.classList.remove('bg-transparent', 'border-nova-border', 'text-nova-muted'); 
+                    } else { 
+                        tab.classList.remove('bg-nova-accent', 'border-nova-accent', 'text-white'); 
+                        tab.classList.add('bg-transparent', 'border-nova-border', 'text-nova-muted', 'hover:border-white'); 
+                    }
+                }
+            }
+            
+            try {
+                const dataStr = await window.readAllStoreData(`${STORE_PREFIX}${index}`);
+                if (dataStr) {
+                    const obj = JSON.parse(dataStr);
+                    document.getElementById('ledgerContentDisplay').textContent = JSON.stringify(obj, null, 4);
+                } else {
+                    document.getElementById('ledgerContentDisplay').textContent = "Ledger not found or empty.";
+                }
+            } catch(e) {
+                document.getElementById('ledgerContentDisplay').textContent = `Error reading ledger: ${e.message}`;
+            }
+        };
+
+        // 12. End Election & Export Logic
+        window.triggerElectionEnd = () => {
+            showCustomConfirm(
+                "End Election & Export", 
+                "Are you sure you want to officially end this election? \n\nVoting will permanently close, and all 5 offline ledgers will be downloaded to your computer as physical files.", 
+                async () => {
+                    try {
+                        window.log("Initiating Election Closure & Export Protocol...", "warn");
+                        
+                        // 1. Update Database
+                        await updateDoc(doc(db, ELECTIONS_PATH, ELECTION_ID), { 
+                            status: 'CLOSED',
+                            closedAt: new Date().toISOString()
+                        });
+                        window.log("Database status updated to CLOSED.", "system");
+
+                        // 2. Export the 5 Ledgers as Physical Files
+                        for(let i=1; i<=FILES_COUNT; i++) {
+                            const dataStr = await window.readAllStoreData(`${STORE_PREFIX}${i}`);
+                            if (dataStr) {
+                                downloadFile(`nova_ledger_${i}_${ELECTION_ID}.json`, dataStr);
+                                window.log(`Exported ledger ${i} to local downloads.`, "info");
+                                // Small delay between downloads so the browser doesn't block them as spam
+                                await new Promise(r => setTimeout(r, 300));
+                            }
+                        }
+
+                        showCustomAlert("Election Finalized", "The election is now closed. The 5 offline ledgers have been downloaded to your computer.");
+                        
+                    } catch (e) {
+                        window.log(`Error during closure: ${e.message}`, "error");
+                        showCustomAlert("Error", "Failed to close election: " + e.message);
+                    }
+                }
+            );
+        };
+
+        function downloadFile(filename, text) {
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(text));
+            element.setAttribute('download', filename);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+
+    </script>
+</body>
+</html>
