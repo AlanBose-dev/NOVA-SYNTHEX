@@ -1,33 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="overflow-x-hidden">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Select Portal | NOVA-SYNTHEX</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['Outfit', 'sans-serif'],
                         mono: ['JetBrains Mono', 'monospace'],
                     },
                     colors: {
                         nova: {
-                            bg: '#050505',
-                            surface: '#0F0F12',
-                            border: '#1F1F26',
-                            accent: '#6366f1',
-                            text: '#E2E2E5',
-                            muted: '#A1A1AA',
+                            bg: '#030014', 
+                            surface: '#0B0A26', 
+                            border: '#2E2B5F', 
+                            accent: '#00F0FF', // Cyan
+                            secondary: '#FF0055', // Pink
+                            tertiary: '#7000FF', // Purple
+                            text: '#F3F4F6',
+                            muted: '#9CA3AF',
                         }
                     },
                     animation: {
-                        'fade-in': 'fadeIn 0.3s ease-out forwards',
-                        'slide-up': 'slideUp 0.3s ease-out forwards',
+                        'fade-in': 'fadeIn 0.4s ease-out forwards',
+                        'slide-up': 'slideUp 0.5s ease-out forwards',
+                        'blob': 'blob 7s infinite',
                     },
                     keyframes: {
                         fadeIn: {
@@ -35,8 +39,14 @@
                             '100%': { opacity: '1' },
                         },
                         slideUp: {
-                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
                             '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' }
                         }
                     }
                 }
@@ -44,122 +54,190 @@
         }
     </script>
     <style>
-        body { background-color: #050505; color: #E2E2E5; }
+        body { 
+            background-color: #030014; 
+            color: #F3F4F6; 
+        }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #030014; }
+        ::-webkit-scrollbar-thumb { background: #2E2B5F; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #7000FF; }
+
         .bg-grid {
-            background-size: 40px 40px;
-            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            mask-image: linear-gradient(to bottom, transparent, black, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 5%, black 80%, transparent 100%);
         }
+        @media (min-width: 768px) {
+            .bg-grid { background-size: 50px 50px; }
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #00F0FF 0%, #7000FF 50%, #FF0055 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: rgba(11, 10, 38, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
         .portal-card {
-            transition: all 0.3s ease;
-            border: 1px solid #1F1F26;
+            cursor: pointer;
         }
+        
         .portal-card:hover {
-            border-color: var(--hover-color, #6366f1);
-            transform: translateY(-4px);
-            box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.1);
+            transform: translateY(-6px);
+            border-color: var(--hover-color, rgba(0, 240, 255, 0.4));
+            box-shadow: 0 20px 40px rgba(var(--hover-rgb, 0, 240, 255), 0.15), inset 0 0 20px rgba(var(--hover-rgb, 0, 240, 255), 0.05);
+        }
+
+        .glass-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 2px;
+            background: linear-gradient(to bottom right, rgba(255,255,255,0.2), transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
         }
     </style>
 </head>
-<body class="antialiased min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6">
-    <div class="fixed inset-0 bg-grid z-0 pointer-events-none"></div>
-    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-900/10 rounded-full blur-[100px] -z-10"></div>
+<body class="antialiased min-h-screen flex flex-col relative overflow-x-hidden selection:bg-nova-tertiary selection:text-white">
+    
+    <!-- Dynamic Background Orbs (Responsive) -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-[10%] right-[-10%] w-[300px] h-[300px] md:w-[600px] md:h-[600px] rounded-full bg-nova-accent/15 mix-blend-screen filter blur-[80px] md:blur-[120px] animate-blob"></div>
+        <div class="absolute bottom-[10%] left-[-10%] w-[300px] h-[300px] md:w-[500px] md:h-[500px] rounded-full bg-nova-secondary/10 mix-blend-screen filter blur-[80px] md:blur-[120px] animate-blob animation-delay-2000"></div>
+        <div class="absolute inset-0 bg-grid z-0"></div>
+    </div>
 
-    <main class="w-full max-w-5xl relative z-10">
+    <!-- Minimal Header -->
+    <header class="w-full absolute top-0 z-50 p-4 sm:p-6">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2 sm:gap-3 cursor-pointer group" onclick="window.location.href='index.html'">
+                <div class="relative">
+                    <div class="absolute inset-0 bg-nova-accent blur-md opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                    <i data-lucide="hexagon" class="text-nova-accent h-6 w-6 sm:h-8 sm:w-8 relative z-10 transform group-hover:rotate-90 transition-transform duration-500"></i>
+                </div>
+                <span class="font-bold tracking-widest text-white text-lg sm:text-xl hidden sm:block">NOVA<span class="font-light opacity-70">-</span>SYNTHEX</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Wrapper (Allows scrolling on small devices) -->
+    <main class="flex-grow flex flex-col items-center justify-center w-full relative z-10 py-20 px-4 sm:px-6">
         
-        <!-- Header -->
-        <div class="text-center mb-12 animate-fade-in">
-            <div class="inline-flex items-center gap-2 mb-4">
-                <i data-lucide="layout-grid" class="text-nova-accent h-10 w-10"></i>
-            </div>
-            <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">NOVA-SYNTHEX</h1>
-            <p class="text-nova-muted text-lg" id="header-subtitle">Select the governance system to access.</p>
-        </div>
-
-        <!-- VIEW 1: SYSTEM SELECTION -->
-        <div id="view-system" class="grid md:grid-cols-2 gap-8 animate-slide-up">
+        <div class="w-full max-w-5xl mx-auto">
             
-            <!-- Option 1: Election System -->
-            <div onclick="selectSystem('election')" class="portal-card bg-nova-surface p-8 rounded-xl flex flex-col group cursor-pointer" style="--hover-color: #6366f1">
-                <div class="mb-6 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-lg w-fit group-hover:bg-indigo-500/20 transition-colors">
-                    <i data-lucide="vote" class="w-8 h-8 text-indigo-400"></i>
+            <!-- Header -->
+            <div class="text-center mb-10 sm:mb-16 animate-fade-in">
+                <div class="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-[#030014] border border-white/10 rounded-2xl mb-6 shadow-[0_0_30px_rgba(112,0,255,0.2)]">
+                    <i data-lucide="layout-grid" class="text-nova-accent h-8 w-8 sm:h-10 sm:w-10"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-white mb-2">Election System</h2>
-                <p class="text-nova-muted mb-8 leading-relaxed flex-grow">
-                    Official corporate elections. Candidate-based voting with strict audit trails and immutable ledger records.
-                </p>
-                <div class="flex items-center gap-2 text-indigo-400 font-medium group-hover:text-indigo-300 transition-colors">
-                    <span>Access Election Roles</span>
-                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                </div>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-3">Access <span class="text-gradient">Portal</span></h1>
+                <p class="text-nova-muted text-base sm:text-lg font-light max-w-xl mx-auto" id="header-subtitle">Select the governance system you wish to access.</p>
             </div>
 
-            <!-- Option 2: Poll System -->
-            <div onclick="selectSystem('poll')" class="portal-card bg-nova-surface p-8 rounded-xl flex flex-col group cursor-pointer" style="--hover-color: #f59e0b">
-                <div class="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg w-fit group-hover:bg-amber-500/20 transition-colors">
-                    <i data-lucide="bar-chart-2" class="w-8 h-8 text-amber-400"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-white mb-2">Poll System</h2>
-                <p class="text-nova-muted mb-8 leading-relaxed flex-grow">
-                    Opinion and feedback collection. Conduct surveys, policy feedback, and statistical analysis.
-                </p>
-                <div class="flex items-center gap-2 text-amber-400 font-medium group-hover:text-amber-300 transition-colors">
-                    <span>Access Poll Roles</span>
-                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- VIEW 2: ROLE SELECTION (Dynamic) -->
-        <div id="view-role" class="hidden animate-slide-up">
-            
-            <div class="flex justify-center mb-8">
-                <span id="selected-system-badge" class="px-4 py-1 rounded-full text-xs font-mono font-bold border uppercase flex items-center gap-2 bg-indigo-900/20 text-indigo-400 border-indigo-500/30">
-                    ELECTION SYSTEM SELECTED
-                </span>
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <!-- VIEW 1: SYSTEM SELECTION -->
+            <div id="view-system" class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 animate-slide-up w-full">
                 
-                <!-- Admin Role -->
-                <a id="link-admin" href="#" class="portal-card bg-nova-surface p-8 rounded-xl flex flex-col group text-center items-center hover:bg-white/5" style="--hover-color: #6366f1">
-                    <div class="mb-4 p-3 bg-gray-800 rounded-full text-gray-400 group-hover:text-white transition-colors">
-                        <i data-lucide="shield-alert" class="w-8 h-8"></i>
+                <!-- Option 1: Election System -->
+                <div onclick="selectSystem('election')" class="glass-card portal-card p-6 sm:p-8 rounded-2xl flex flex-col group relative overflow-hidden" style="--hover-color: rgba(0, 240, 255, 0.5); --hover-rgb: 0, 240, 255;">
+                    <div class="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 bg-nova-accent/10 rounded-bl-full -z-10 transition-transform duration-500 group-hover:scale-125"></div>
+                    
+                    <div class="mb-5 sm:mb-6 w-12 h-12 sm:w-14 sm:h-14 bg-[#030014] border border-nova-accent/30 rounded-xl flex items-center justify-center group-hover:border-nova-accent transition-colors shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+                        <i data-lucide="vote" class="w-6 h-6 sm:w-7 sm:h-7 text-nova-accent"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-2">Administrator</h3>
-                    <p class="text-sm text-nova-muted mb-6">Manage lifecycle, candidates, and voters.</p>
-                    <span class="px-6 py-2 border border-nova-border rounded text-sm group-hover:border-indigo-500 group-hover:text-indigo-400 transition-colors">Login as Admin</span>
-                </a>
+                    <h2 class="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3 relative z-10">Election System</h2>
+                    <p class="text-sm sm:text-base text-nova-muted mb-6 sm:mb-8 leading-relaxed flex-grow relative z-10">
+                        Official corporate elections. Candidate-based voting with strict audit trails and immutable ledger records.
+                    </p>
+                    <div class="flex items-center gap-2 text-nova-accent font-bold text-sm sm:text-base relative z-10">
+                        <span>Access Election Roles</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 transform group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
 
-                <!-- Voter Role -->
-                <a id="link-voter" href="#" class="portal-card bg-nova-surface p-8 rounded-xl flex flex-col group text-center items-center hover:bg-white/5" style="--hover-color: #10b981">
-                    <div class="mb-4 p-3 bg-gray-800 rounded-full text-gray-400 group-hover:text-white transition-colors">
-                        <i data-lucide="user-check" class="w-8 h-8"></i>
+                <!-- Option 2: Poll System -->
+                <div onclick="selectSystem('poll')" class="glass-card portal-card p-6 sm:p-8 rounded-2xl flex flex-col group relative overflow-hidden" style="--hover-color: rgba(255, 0, 85, 0.5); --hover-rgb: 255, 0, 85;">
+                    <div class="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 bg-nova-secondary/10 rounded-bl-full -z-10 transition-transform duration-500 group-hover:scale-125"></div>
+                    
+                    <div class="mb-5 sm:mb-6 w-12 h-12 sm:w-14 sm:h-14 bg-[#030014] border border-nova-secondary/30 rounded-xl flex items-center justify-center group-hover:border-nova-secondary transition-colors shadow-[0_0_15px_rgba(255,0,85,0.2)]">
+                        <i data-lucide="bar-chart-2" class="w-6 h-6 sm:w-7 sm:h-7 text-nova-secondary"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-2">Voter / Participant</h3>
-                    <p class="text-sm text-nova-muted mb-6">Cast secure votes or submit feedback.</p>
-                    <span class="px-6 py-2 border border-nova-border rounded text-sm group-hover:border-emerald-500 group-hover:text-emerald-400 transition-colors">Login as Voter</span>
-                </a>
+                    <h2 class="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3 relative z-10">Opinion Poll System</h2>
+                    <p class="text-sm sm:text-base text-nova-muted mb-6 sm:mb-8 leading-relaxed flex-grow relative z-10">
+                        Opinion and feedback collection. Conduct surveys, policy feedback, and statistical analysis with flexible configurations.
+                    </p>
+                    <div class="flex items-center gap-2 text-nova-secondary font-bold text-sm sm:text-base relative z-10">
+                        <span>Access Poll Roles</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 transform group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
 
             </div>
 
-            <div class="text-center mt-12">
-                <button onclick="resetSelection()" class="text-sm text-nova-muted hover:text-white flex items-center justify-center gap-2 mx-auto transition-colors">
-                    <i data-lucide="arrow-left-circle" class="w-4 h-4"></i>
-                    Change System
-                </button>
+            <!-- VIEW 2: ROLE SELECTION (Dynamic) -->
+            <div id="view-role" class="hidden animate-slide-up w-full">
+                
+                <div class="flex justify-center mb-8 sm:mb-10">
+                    <span id="selected-system-badge" class="px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-mono font-bold border uppercase flex items-center gap-2 tracking-widest">
+                        SYSTEM SELECTED
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
+                    
+                    <!-- Admin Role -->
+                    <a id="link-admin" href="#" class="glass-card portal-card p-6 sm:p-8 rounded-2xl flex flex-col group text-center items-center" style="--hover-color: rgba(112, 0, 255, 0.5); --hover-rgb: 112, 0, 255;">
+                        <div class="mb-4 sm:mb-5 w-16 h-16 sm:w-20 sm:h-20 bg-black/50 border border-white/10 rounded-full text-gray-400 group-hover:text-nova-tertiary group-hover:border-nova-tertiary transition-all flex items-center justify-center">
+                            <i data-lucide="shield-alert" class="w-8 h-8 sm:w-10 sm:h-10"></i>
+                        </div>
+                        <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Administrator</h3>
+                        <p class="text-sm sm:text-base text-nova-muted mb-6 sm:mb-8 font-light">Manage lifecycle, candidates, voter rosters, and final audits.</p>
+                        <div class="px-6 py-3 bg-white/5 border border-white/10 rounded-full text-sm font-bold text-white group-hover:bg-nova-tertiary group-hover:border-nova-tertiary transition-colors w-full sm:w-auto">
+                            Login as Admin
+                        </div>
+                    </a>
+
+                    <!-- Voter Role -->
+                    <a id="link-voter" href="#" class="glass-card portal-card p-6 sm:p-8 rounded-2xl flex flex-col group text-center items-center" style="--hover-color: rgba(0, 240, 255, 0.5); --hover-rgb: 0, 240, 255;">
+                        <div class="mb-4 sm:mb-5 w-16 h-16 sm:w-20 sm:h-20 bg-black/50 border border-white/10 rounded-full text-gray-400 group-hover:text-nova-accent group-hover:border-nova-accent transition-all flex items-center justify-center">
+                            <i data-lucide="user-check" class="w-8 h-8 sm:w-10 sm:h-10"></i>
+                        </div>
+                        <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Voter / Participant</h3>
+                        <p class="text-sm sm:text-base text-nova-muted mb-6 sm:mb-8 font-light">Access your secure dashboard to cast votes or submit feedback.</p>
+                        <div class="px-6 py-3 bg-white/5 border border-white/10 rounded-full text-sm font-bold text-white group-hover:bg-nova-accent group-hover:text-black group-hover:border-nova-accent transition-colors w-full sm:w-auto">
+                            Login as Voter
+                        </div>
+                    </a>
+
+                </div>
+
+                <div class="text-center mt-10 sm:mt-12">
+                    <button onclick="resetSelection()" class="text-sm text-nova-muted hover:text-white flex items-center justify-center gap-2 mx-auto transition-colors bg-white/5 hover:bg-white/10 px-6 py-2.5 rounded-full border border-white/10">
+                        <i data-lucide="arrow-left-circle" class="w-4 h-4"></i>
+                        Change System Module
+                    </button>
+                </div>
             </div>
-        </div>
 
-        <!-- Global Footer Navigation -->
-        <div class="text-center mt-16 border-t border-nova-border pt-8">
-            <a href="index.html" class="inline-flex items-center gap-2 text-xs font-mono text-nova-muted hover:text-white transition-colors opacity-50 hover:opacity-100">
-                <i data-lucide="home" class="w-3 h-3"></i>
-                RETURN TO LANDING PAGE
-            </a>
         </div>
-
     </main>
 
     <script>
@@ -175,37 +253,30 @@
             const adminLink = document.getElementById('link-admin');
             const voterLink = document.getElementById('link-voter');
 
-            // Hide System View
+            // Hide System View smoothly
             systemView.style.display = 'none';
             roleView.style.display = 'block';
             roleView.classList.remove('hidden');
 
             if (systemType === 'election') {
                 // Configure for Election
-                header.innerText = "Select your role in the Election System.";
+                header.innerText = "Select your designated role for the Election.";
                 
                 badge.innerText = "ELECTION SYSTEM SELECTED";
-                badge.className = "px-4 py-1 rounded-full text-xs font-mono font-bold border uppercase flex items-center gap-2 bg-indigo-900/20 text-indigo-400 border-indigo-500/30";
+                badge.className = "px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-mono font-bold border uppercase flex items-center gap-2 tracking-widest bg-indigo-900/30 text-nova-accent border-nova-accent/30";
                 
                 adminLink.href = "election/election-login.html";
-                adminLink.style.setProperty('--hover-color', '#6366f1'); // Indigo
-                
                 voterLink.href = "voter/voter-login.html";
-                voterLink.style.setProperty('--hover-color', '#10b981'); // Emerald
 
             } else if (systemType === 'poll') {
                 // Configure for Poll
-                header.innerText = "Select your role in the Poll System.";
+                header.innerText = "Select your designated role for the Poll.";
                 
                 badge.innerText = "POLL SYSTEM SELECTED";
-                badge.className = "px-4 py-1 rounded-full text-xs font-mono font-bold border uppercase flex items-center gap-2 bg-amber-900/20 text-amber-400 border-amber-500/30";
+                badge.className = "px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-mono font-bold border uppercase flex items-center gap-2 tracking-widest bg-pink-900/30 text-nova-secondary border-nova-secondary/30";
                 
-                // Assuming standard folder structure for future poll module
                 adminLink.href = "poll/poll-login.html";
-                adminLink.style.setProperty('--hover-color', '#f59e0b'); // Amber
-                
                 voterLink.href = "poll/voter-login.html";
-                voterLink.style.setProperty('--hover-color', '#f59e0b'); // Amber
             }
         }
 
@@ -217,7 +288,7 @@
             roleView.style.display = 'none';
             systemView.style.display = 'grid'; // Grid for layout
             
-            header.innerText = "Select the governance system to access.";
+            header.innerText = "Select the governance system you wish to access.";
         }
     </script>
 </body>
