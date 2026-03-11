@@ -5,31 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NOVA-SYNTHEX | Corporate Governance System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FIXED: Locked to a stable version to prevent missing icons from library updates -->
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.292.0/dist/umd/lucide.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['Outfit', 'sans-serif'],
                         mono: ['JetBrains Mono', 'monospace'],
                     },
                     colors: {
                         nova: {
-                            bg: '#050505',
-                            surface: '#0F0F12',
-                            border: '#1F1F26',
-                            accent: '#6366f1', // Indigo 500
-                            glow: '#4f46e5',   // Indigo 600
-                            text: '#E2E2E5',
-                            muted: '#A1A1AA'
+                            bg: '#030014', // Deep cosmic blue/black
+                            surface: '#0B0A26', // Slightly lighter deep blue
+                            border: '#2E2B5F', // Muted purple border
+                            accent: '#00F0FF', // Neon cyan
+                            secondary: '#FF0055', // Neon pink
+                            tertiary: '#7000FF', // Deep neon purple
+                            text: '#F3F4F6',
+                            muted: '#9CA3AF'
                         }
                     },
                     backgroundImage: {
                         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'hero-glow': 'conic-gradient(from 180deg at 50% 50%, #2a8af6 0deg, #a853ba 180deg, #e92a67 360deg)',
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
                     }
                 }
             }
@@ -37,187 +54,298 @@
     </script>
     <style>
         body {
-            background-color: #050505;
-            color: #E2E2E5;
+            background-color: #030014;
+            color: #F3F4F6;
+            overflow-x: hidden;
         }
         
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #050505;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #1F1F26;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #6366f1;
-        }
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #030014; }
+        ::-webkit-scrollbar-thumb { background: #2E2B5F; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #7000FF; }
 
-        /* Subtle Grid Background */
+        /* Dynamic Grid Background */
         .bg-grid {
-            background-size: 40px 40px;
-            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            mask-image: linear-gradient(to bottom, transparent, black, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 5%, black 40%, black 60%, transparent 95%);
         }
 
-        /* Text Glow utility */
-        .text-glow {
-            text-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        /* Typography Gradients */
+        .text-gradient {
+            background: linear-gradient(135deg, #00F0FF 0%, #7000FF 50%, #FF0055 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .text-gradient-subtle {
+            background: linear-gradient(to right, #A5B4FC, #F472B6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: rgba(11, 10, 38, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         
-        /* Card Hover Effect */
-        .tech-card {
-            transition: all 0.3s ease;
-            border: 1px solid #1F1F26;
+        .glass-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: rgba(0, 240, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(112, 0, 255, 0.2), inset 0 0 20px rgba(0, 240, 255, 0.05);
         }
-        .tech-card:hover {
-            border-color: #6366f1;
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.1);
+
+        .glass-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 2px;
+            background: linear-gradient(to bottom right, rgba(255,255,255,0.2), transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        /* Button styling */
+        .btn-primary {
+            background: linear-gradient(90deg, #7000FF, #FF0055);
+            background-size: 200% auto;
+            color: white;
+            transition: 0.5s;
+            position: relative;
+            z-index: 1;
+        }
+        .btn-primary:hover {
+            background-position: right center;
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.5);
+        }
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 1px; right: 1px; bottom: 1px; left: 1px;
+            background: linear-gradient(90deg, #7000FF, #FF0055);
+            border-radius: inherit;
+            z-index: -1;
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+        .btn-primary:active::before {
+            opacity: 1;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(0, 240, 255, 0.5);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
         }
     </style>
 </head>
-<body class="antialiased min-h-screen flex flex-col relative overflow-x-hidden">
+<body class="antialiased min-h-screen flex flex-col relative overflow-x-hidden selection:bg-nova-tertiary selection:text-white">
 
-    <!-- Background Elements -->
-    <div class="fixed inset-0 bg-grid z-0 pointer-events-none"></div>
-    <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-900/20 rounded-full blur-[120px] -z-10"></div>
+    <!-- Dynamic Background Orbs -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-nova-tertiary/20 mix-blend-screen filter blur-[100px] animate-blob"></div>
+        <div class="absolute top-[20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-nova-secondary/10 mix-blend-screen filter blur-[120px] animate-blob animation-delay-2000"></div>
+        <div class="absolute bottom-[-20%] left-[20%] w-[700px] h-[700px] rounded-full bg-nova-accent/15 mix-blend-screen filter blur-[150px] animate-blob animation-delay-4000"></div>
+        <div class="absolute inset-0 bg-grid z-0"></div>
+    </div>
 
     <!-- Navigation -->
-    <nav class="sticky top-0 z-50 border-b border-nova-border bg-nova-bg/90 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <i data-lucide="hexagon" class="text-nova-accent h-6 w-6"></i>
-                <span class="font-mono font-bold tracking-wider text-white">NOVA-SYNTHEX</span>
+    <nav class="fixed w-full z-50 border-b border-white/5 bg-nova-bg/60 backdrop-blur-xl transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer group">
+                <div class="relative">
+                    <div class="absolute inset-0 bg-nova-accent blur-md opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                    <i data-lucide="hexagon" class="text-nova-accent h-8 w-8 relative z-10 transform group-hover:rotate-90 transition-transform duration-500"></i>
+                </div>
+                <span class="font-bold tracking-widest text-white text-xl">NOVA<span class="font-light opacity-70">-</span>SYNTHEX</span>
             </div>
             
             <div class="hidden md:flex items-center gap-8 text-sm font-medium text-nova-muted">
-                <a href="#about" class="hover:text-white transition-colors">About</a>
-                <a href="#capabilities" class="hover:text-white transition-colors">Capabilities</a>
-                <a href="#comparison" class="hover:text-white transition-colors">Election vs Poll</a>
-                <a href="#security" class="hover:text-white transition-colors">Security Audit</a>
+                <a href="#about" class="hover:text-nova-accent transition-colors relative after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-nova-accent after:transition-all hover:after:w-full">About</a>
+                <a href="#capabilities" class="hover:text-nova-secondary transition-colors relative after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-nova-secondary after:transition-all hover:after:w-full">Capabilities</a>
+                <a href="#comparison" class="hover:text-nova-tertiary transition-colors relative after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-nova-tertiary after:transition-all hover:after:w-full">Election vs Poll</a>
             </div>
 
-            <button onclick="handleInit()" class="bg-nova-surface border border-nova-border hover:border-nova-accent text-white px-4 py-2 rounded text-xs font-mono tracking-wide transition-all">
-                INITIALIZE_SYSTEM
+            <button onclick="handleInit()" class="hidden md:flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-nova-accent text-white px-5 py-2.5 rounded-full text-xs font-bold tracking-widest uppercase transition-all overflow-hidden group">
+                <span class="relative z-10">Initialize System</span>
+                <i data-lucide="zap" class="w-3 h-3 text-nova-accent relative z-10 group-hover:animate-pulse"></i>
             </button>
+            
+            <button class="md:hidden text-white"><i data-lucide="menu"></i></button>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <header class="relative z-10 pt-24 pb-20 px-6">
-        <div class="max-w-4xl mx-auto text-center">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-900/30 border border-indigo-500/30 mb-8">
-                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span class="text-xs font-mono text-indigo-200">SYSTEM STATUS: ONLINE</span>
+    <header class="relative z-10 pt-40 pb-32 px-6 min-h-screen flex items-center">
+        <div class="max-w-5xl mx-auto text-center">
+            
+            <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full glass-card mb-8 animate-fade-in-up">
+                <span class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-nova-accent opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-nova-accent"></span>
+                </span>
+                <span class="text-xs font-bold tracking-widest text-nova-accent uppercase">Enterprise Grade Governance</span>
             </div>
             
-            <h1 class="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6 text-glow">
-                NOVA-SYNTHEX
+            <h1 class="text-6xl md:text-8xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+                Trust in Every <br />
+                <span class="text-gradient">Cryptographic Vote.</span>
             </h1>
-            <p class="text-xl md:text-2xl text-nova-muted font-light mb-8 max-w-2xl mx-auto leading-relaxed">
-                A secure corporate voting and polling system for internal governance and auditable decision-making.
+            
+            <p class="text-xl md:text-2xl text-nova-muted font-light mb-12 max-w-3xl mx-auto leading-relaxed">
+                NOVA-SYNTHEX delivers military-grade secure elections and polling. Immutable ledgers, verifiable anonymity, and zero-trust architecture.
             </p>
             
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-                <button onclick="handleInit()" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded font-medium transition-all shadow-lg shadow-indigo-900/20">
-                    Initialize System
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-6 mt-10">
+                <button onclick="handleInit()" class="btn-primary w-full sm:w-auto px-10 py-4 rounded-full font-bold text-lg tracking-wide flex items-center justify-center gap-3 group">
+                    <span>Deploy System</span>
+                    <i data-lucide="rocket" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
                 </button>
-                <a href="portal-select.html" class="w-full sm:w-auto px-8 py-3 bg-transparent border border-nova-border hover:border-white text-nova-muted hover:text-white rounded font-medium transition-all text-center">
-                    Access Portal
+                <a href="portal-select.html" class="btn-secondary w-full sm:w-auto px-10 py-4 rounded-full font-bold text-lg tracking-wide text-white flex items-center justify-center gap-3 group">
+                    <span>Access Portal</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
                 </a>
+            </div>
+
+            <!-- Scroll Indicator -->
+            <div class="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce opacity-50">
+                <i data-lucide="chevron-down" class="text-nova-accent w-8 h-8"></i>
             </div>
         </div>
     </header>
 
     <!-- Problem Statement -->
-    <section id="about" class="py-20 bg-nova-surface/50 border-y border-nova-border relative z-10">
+    <section id="about" class="py-24 relative z-10">
         <div class="max-w-7xl mx-auto px-6">
-            <div class="grid md:grid-cols-2 gap-12 items-center">
-                <div>
-                    <h2 class="text-3xl font-bold text-white mb-6">The Governance Void</h2>
-                    <p class="text-nova-muted mb-4 leading-relaxed">
-                        Informal corporate voting methods—email surveys, show of hands, or opaque third-party tools—create significant risks in organizational governance.
-                    </p>
-                    <p class="text-nova-muted mb-6 leading-relaxed">
-                        Without cryptographic verification or a tamper-evident audit trail, centralized decisions lack accountability, leading to diminished trust among stakeholders and employees.
-                    </p>
-                    <ul class="space-y-3 mt-8">
-                        <li class="flex items-center gap-3 text-sm text-nova-muted">
-                            <i data-lucide="x-circle" class="text-red-500 h-4 w-4"></i>
-                            <span>No audit trail for critical decisions</span>
-                        </li>
-                        <li class="flex items-center gap-3 text-sm text-nova-muted">
-                            <i data-lucide="x-circle" class="text-red-500 h-4 w-4"></i>
-                            <span>Identity spoofing risks in remote environments</span>
-                        </li>
-                        <li class="flex items-center gap-3 text-sm text-nova-muted">
-                            <i data-lucide="x-circle" class="text-red-500 h-4 w-4"></i>
-                            <span>Lack of verifiable anonymity</span>
-                        </li>
-                    </ul>
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div class="space-y-8 relative">
+                    <div class="absolute -left-8 -top-8 text-9xl font-black text-white/5 z-0 pointer-events-none">01</div>
+                    <div class="relative z-10">
+                        <h2 class="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">The Governance <br><span class="text-nova-secondary">Void.</span></h2>
+                        <p class="text-lg text-nova-muted leading-relaxed">
+                            Informal corporate voting methods—email surveys, show of hands, or opaque third-party tools—create significant risks in organizational governance.
+                        </p>
+                        <p class="text-lg text-nova-muted leading-relaxed mt-4">
+                            Without cryptographic verification or a tamper-evident audit trail, centralized decisions lack accountability, leading to diminished trust among stakeholders.
+                        </p>
+                    </div>
+
+                    <div class="grid sm:grid-cols-2 gap-4 mt-8">
+                        <div class="glass-card p-4 rounded-xl flex items-start gap-3">
+                            <i data-lucide="shield-alert" class="text-nova-secondary h-6 w-6 mt-1 flex-shrink-0"></i>
+                            <div>
+                                <h4 class="text-white font-bold mb-1">No Audit Trail</h4>
+                                <p class="text-sm text-nova-muted">Critical decisions cannot be verified retroactively.</p>
+                            </div>
+                        </div>
+                        <div class="glass-card p-4 rounded-xl flex items-start gap-3">
+                            <i data-lucide="user-x" class="text-nova-secondary h-6 w-6 mt-1 flex-shrink-0"></i>
+                            <div>
+                                <h4 class="text-white font-bold mb-1">Identity Spoofing</h4>
+                                <p class="text-sm text-nova-muted">High risk in remote and hybrid work environments.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="bg-nova-bg border border-nova-border p-8 rounded-lg">
-                    <div class="font-mono text-sm text-indigo-400 mb-4 border-b border-nova-border pb-2"> // SYSTEM_LOGIC_DEF</div>
-                    <p class="text-sm font-mono text-gray-400 mb-2">
-                        IF <span class="text-white">audit_trail</span> == NULL <br>
-                        THEN <span class="text-red-400">trust_level</span> = 0
-                    </p>
-                    <p class="text-sm font-mono text-gray-400 mb-2">
-                        IF <span class="text-white">voter_identity</span> != VERIFIED <br>
-                        THEN <span class="text-red-400">vote_validity</span> = FALSE
-                    </p>
-                    <p class="text-sm font-mono text-gray-400">
-                        EXECUTE <span class="text-green-400">NOVA_PROTOCOL</span>
-                    </p>
+
+                <div class="relative h-full min-h-[400px] flex items-center justify-center animate-float">
+                    <div class="absolute inset-0 bg-gradient-to-tr from-nova-tertiary/20 to-nova-accent/20 rounded-3xl transform rotate-3 scale-105 blur-lg"></div>
+                    <div class="glass-card p-8 rounded-3xl w-full relative z-10 border border-white/10 bg-[#0B0A26]/80 overflow-hidden">
+                        <!-- Decorative top bar -->
+                        <div class="flex gap-2 mb-6 border-b border-white/5 pb-4">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        
+                        <div class="font-mono text-sm text-nova-accent mb-4"> // SYSTEM_LOGIC_DEF</div>
+                        <div class="space-y-4">
+                            <div class="bg-black/40 p-4 rounded-lg border border-white/5">
+                                <p class="font-mono text-gray-300">
+                                    <span class="text-nova-secondary">IF</span> <span class="text-white">audit_trail</span> == <span class="text-nova-accent">NULL</span> <br>
+                                    <span class="text-nova-secondary">THEN</span> <span class="text-red-400">trust_level</span> = <span class="text-nova-accent">0</span>
+                                </p>
+                            </div>
+                            <div class="bg-black/40 p-4 rounded-lg border border-white/5">
+                                <p class="font-mono text-gray-300">
+                                    <span class="text-nova-secondary">IF</span> <span class="text-white">voter_identity</span> != <span class="text-green-400">VERIFIED</span> <br>
+                                    <span class="text-nova-secondary">THEN</span> <span class="text-red-400">vote_validity</span> = <span class="text-nova-accent">FALSE</span>
+                                </p>
+                            </div>
+                            <div class="p-4 bg-nova-accent/10 border border-nova-accent/30 rounded-lg text-center mt-6">
+                                <p class="font-mono font-bold text-nova-accent tracking-widest">
+                                    > EXECUTE NOVA_PROTOCOL
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Core Capabilities -->
-    <section id="capabilities" class="py-20 relative z-10">
+    <section id="capabilities" class="py-24 relative z-10 bg-[#07051A]">
         <div class="max-w-7xl mx-auto px-6">
-            <div class="flex items-end justify-between mb-12">
-                <div>
-                    <h2 class="text-3xl font-bold text-white mb-2">System Capabilities</h2>
-                    <p class="text-nova-muted">Modules available for deployment.</p>
-                </div>
-                <div class="hidden md:block h-px w-64 bg-nova-border"></div>
+            <div class="text-center mb-16 relative">
+                <div class="absolute left-1/2 -top-10 -translate-x-1/2 text-8xl font-black text-white/5 z-0 pointer-events-none">02</div>
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-4 relative z-10">System <span class="text-gradient-subtle">Capabilities</span></h2>
+                <p class="text-nova-muted text-lg max-w-2xl mx-auto">Modular architecture designed for diverse governance requirements.</p>
             </div>
 
-            <div class="grid md:grid-cols-3 gap-6">
+            <div class="grid md:grid-cols-3 gap-8">
                 <!-- Card 1 -->
-                <div class="tech-card bg-nova-surface p-6 rounded-lg">
-                    <div class="w-12 h-12 bg-indigo-900/20 border border-indigo-500/20 rounded flex items-center justify-center mb-4">
-                        <i data-lucide="vote" class="text-indigo-400 h-6 w-6"></i>
+                <div class="glass-card p-8 rounded-2xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-nova-accent/20 rounded-bl-full -z-10 transition-transform group-hover:scale-150"></div>
+                    <div class="w-14 h-14 bg-[#030014] border border-nova-accent/30 rounded-xl flex items-center justify-center mb-6 shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+                        <i data-lucide="vote" class="text-nova-accent h-7 w-7"></i>
                     </div>
-                    <h3 class="text-lg font-semibold text-white mb-2">Corporate Elections</h3>
-                    <p class="text-sm text-nova-muted leading-relaxed">
+                    <h3 class="text-2xl font-bold text-white mb-4">Corporate Elections</h3>
+                    <p class="text-nova-muted leading-relaxed">
                         Formal selection processes for leadership roles, committee members, or board representatives with strict one-person-one-vote enforcement.
                     </p>
                 </div>
 
                 <!-- Card 2 -->
-                <div class="tech-card bg-nova-surface p-6 rounded-lg">
-                    <div class="w-12 h-12 bg-indigo-900/20 border border-indigo-500/20 rounded flex items-center justify-center mb-4">
-                        <i data-lucide="bar-chart-2" class="text-indigo-400 h-6 w-6"></i>
+                <div class="glass-card p-8 rounded-2xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-nova-secondary/20 rounded-bl-full -z-10 transition-transform group-hover:scale-150"></div>
+                    <div class="w-14 h-14 bg-[#030014] border border-nova-secondary/30 rounded-xl flex items-center justify-center mb-6 shadow-[0_0_15px_rgba(255,0,85,0.2)]">
+                        <i data-lucide="bar-chart-2" class="text-nova-secondary h-7 w-7"></i>
                     </div>
-                    <h3 class="text-lg font-semibold text-white mb-2">Opinion Polling</h3>
-                    <p class="text-sm text-nova-muted leading-relaxed">
-                        Rapid sentiment analysis for policy changes, workplace environment surveys, or strategic direction feedback.
+                    <h3 class="text-2xl font-bold text-white mb-4">Opinion Polling</h3>
+                    <p class="text-nova-muted leading-relaxed">
+                        Rapid sentiment analysis for policy changes, workplace environment surveys, or strategic direction feedback. Flexible option structures.
                     </p>
                 </div>
 
                 <!-- Card 3 -->
-                <div class="tech-card bg-nova-surface p-6 rounded-lg">
-                    <div class="w-12 h-12 bg-indigo-900/20 border border-indigo-500/20 rounded flex items-center justify-center mb-4">
-                        <i data-lucide="lock" class="text-indigo-400 h-6 w-6"></i>
+                <div class="glass-card p-8 rounded-2xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-nova-tertiary/20 rounded-bl-full -z-10 transition-transform group-hover:scale-150"></div>
+                    <div class="w-14 h-14 bg-[#030014] border border-nova-tertiary/30 rounded-xl flex items-center justify-center mb-6 shadow-[0_0_15px_rgba(112,0,255,0.2)]">
+                        <i data-lucide="lock" class="text-nova-tertiary h-7 w-7"></i>
                     </div>
-                    <h3 class="text-lg font-semibold text-white mb-2">Admin Lifecycle</h3>
-                    <p class="text-sm text-nova-muted leading-relaxed">
+                    <h3 class="text-2xl font-bold text-white mb-4">Admin Lifecycle</h3>
+                    <p class="text-nova-muted leading-relaxed">
                         Complete control over the voting window: Initialization, Voter Verification, Active Phase, and Cryptographic Closure.
                     </p>
                 </div>
@@ -225,137 +353,72 @@
         </div>
     </section>
 
-    <!-- Critical Section: Election vs Poll -->
-    <section id="comparison" class="py-20 bg-nova-surface/30 border-t border-nova-border relative z-10">
-        <div class="max-w-5xl mx-auto px-6">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold text-white mb-4">Module Distinction</h2>
-                <p class="text-nova-muted max-w-xl mx-auto">
-                    NOVA-SYNTHEX distinguishes strictly between Binding Elections and Opinion Polls. Understand the difference before initialization.
-                </p>
-            </div>
-
-            <div class="border border-nova-border rounded-lg overflow-hidden">
-                <div class="grid grid-cols-3 bg-nova-surface border-b border-nova-border">
-                    <div class="p-4 font-mono text-xs text-nova-muted uppercase tracking-wider">Parameter</div>
-                    <div class="p-4 font-mono text-sm text-white font-bold border-l border-nova-border bg-indigo-900/10 text-center">ELECTION</div>
-                    <div class="p-4 font-mono text-sm text-white font-bold border-l border-nova-border text-center">POLL</div>
-                </div>
-
-                <!-- Row 1 -->
-                <div class="grid grid-cols-3 border-b border-nova-border/50 hover:bg-nova-surface/50 transition-colors">
-                    <div class="p-4 text-sm text-nova-muted font-medium">Primary Objective</div>
-                    <div class="p-4 text-sm text-white border-l border-nova-border/50 text-center">Select a Person/Entity</div>
-                    <div class="p-4 text-sm text-white border-l border-nova-border/50 text-center">Gauge Sentiment</div>
-                </div>
-
-                <!-- Row 2 -->
-                <div class="grid grid-cols-3 border-b border-nova-border/50 hover:bg-nova-surface/50 transition-colors">
-                    <div class="p-4 text-sm text-nova-muted font-medium">Outcome</div>
-                    <div class="p-4 text-sm text-white border-l border-nova-border/50 text-center">Definitive Winner</div>
-                    <div class="p-4 text-sm text-white border-l border-nova-border/50 text-center">Aggregated Data</div>
-                </div>
-
-                <!-- Row 3 -->
-                <div class="grid grid-cols-3 border-b border-nova-border/50 hover:bg-nova-surface/50 transition-colors">
-                    <div class="p-4 text-sm text-nova-muted font-medium">Security Level</div>
-                    <div class="p-4 text-sm text-indigo-400 border-l border-nova-border/50 text-center font-mono">MAXIMUM (Strict Auth)</div>
-                    <div class="p-4 text-sm text-white border-l border-nova-border/50 text-center font-mono">STANDARD</div>
-                </div>
-
-                <!-- Row 4 -->
-                <div class="grid grid-cols-3 hover:bg-nova-surface/50 transition-colors">
-                    <div class="p-4 text-sm text-nova-muted font-medium">Audit Ledger</div>
-                    <div class="p-4 text-sm text-white border-l border-nova-border/50 text-center">Mandatory</div>
-                    <div class="p-4 text-sm text-white border-l border-nova-border/50 text-center">Optional</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- How It Works -->
-    <section class="py-20 relative z-10">
-        <div class="max-w-7xl mx-auto px-6">
-            <h2 class="text-3xl font-bold text-white mb-12">Operational Workflow</h2>
-            
-            <div class="grid md:grid-cols-4 gap-8">
-                <!-- Step 1 -->
-                <div class="relative">
-                    <div class="text-6xl font-bold text-nova-border absolute -top-8 -left-4 z-0">01</div>
-                    <div class="relative z-10">
-                        <h4 class="text-lg font-bold text-white mb-3">Initialization</h4>
-                        <p class="text-sm text-nova-muted">Admin defines the event type (Election/Poll), sets the time window, and establishes the candidate roster.</p>
-                    </div>
-                </div>
-
-                <!-- Step 2 -->
-                <div class="relative">
-                    <div class="text-6xl font-bold text-nova-border absolute -top-8 -left-4 z-0">02</div>
-                    <div class="relative z-10">
-                        <h4 class="text-lg font-bold text-white mb-3">Verification</h4>
-                        <p class="text-sm text-nova-muted">Voter whitelist is imported. System generates unique, one-time access tokens for eligible participants.</p>
-                    </div>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="relative">
-                    <div class="text-6xl font-bold text-nova-border absolute -top-8 -left-4 z-0">03</div>
-                    <div class="relative z-10">
-                        <h4 class="text-lg font-bold text-white mb-3">Voting Phase</h4>
-                        <p class="text-sm text-nova-muted">Votes are cast encrypted. The identity is decoupled from the vote choice upon submission.</p>
-                    </div>
-                </div>
-
-                <!-- Step 4 -->
-                <div class="relative">
-                    <div class="text-6xl font-bold text-nova-border absolute -top-8 -left-4 z-0">04</div>
-                    <div class="relative z-10">
-                        <h4 class="text-lg font-bold text-white mb-3">Closure & Audit</h4>
-                        <p class="text-sm text-nova-muted">Election is sealed. Results are computed. An immutable log of events is generated for review.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Security Model -->
-    <section id="security" class="py-20 bg-nova-surface border-y border-nova-border relative z-10">
-        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
-            <div class="order-2 md:order-1">
-                 <div class="bg-black/50 p-6 rounded border border-nova-border font-mono text-xs text-green-400 overflow-hidden">
-                    <div class="mb-2 opacity-50"># Audit Log Stream</div>
-                    <div class="mb-1">> EVENT: VOTE_CAST</div>
-                    <div class="mb-1 text-gray-500">> HASH: 8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4</div>
-                    <div class="mb-1">> TIMESTAMP: 2023-10-27T14:22:10Z</div>
-                    <div class="mb-1">> INTEGRITY: VERIFIED</div>
-                    <div class="mb-1 text-gray-500">----------------------------------------</div>
-                    <div class="mb-1">> EVENT: VOTE_CAST</div>
-                    <div class="mb-1 text-gray-500">> HASH: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</div>
-                    <div class="mb-1 animate-pulse">_</div>
-                 </div>
-            </div>
-            <div class="order-1 md:order-2">
-                <div class="inline-flex items-center gap-2 text-indigo-400 mb-4 font-mono text-sm">
-                    <i data-lucide="shield-check" class="w-5 h-5"></i>
-                    <span>SECURITY ARCHITECTURE</span>
-                </div>
-                <h2 class="text-3xl font-bold text-white mb-6">Trust & Integrity</h2>
-                <p class="text-nova-muted mb-6">
-                    NOVA-SYNTHEX utilizes a blockchain-inspired ledger system to ensure that once a vote is cast, it cannot be altered or deleted without detection.
-                </p>
-                <div class="space-y-4">
-                    <div class="flex gap-4">
-                        <div class="w-1 bg-indigo-500 h-full rounded"></div>
-                        <div>
-                            <h4 class="text-white font-medium">One-Person-One-Vote</h4>
-                            <p class="text-sm text-nova-muted">Strict enforcement prevents double voting through token invalidation.</p>
+    <section id="security" class="py-24 relative z-10 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                
+                <div class="relative order-2 lg:order-1 perspective-1000">
+                    <div class="absolute inset-0 bg-nova-tertiary/20 blur-[100px] rounded-full"></div>
+                    <div class="glass-card p-6 rounded-2xl border border-white/10 font-mono text-sm relative z-10 transform rotate-y-12 rotate-x-12 hover:rotate-0 transition-transform duration-700 shadow-2xl">
+                        <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+                            <span class="text-nova-muted text-xs flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> LIVE_LEDGER_STREAM</span>
+                            <i data-lucide="shield-check" class="text-green-400 w-5 h-5"></i>
+                        </div>
+                        <div class="space-y-3 h-64 overflow-hidden relative">
+                            <div class="animate-slide-up opacity-60">
+                                <div class="text-nova-accent">> EVENT: VOTE_CAST</div>
+                                <div class="text-gray-500 truncate">> HASH: 8f434346648f6b96df89dda901c5176b10...</div>
+                                <div class="text-green-400">> INTEGRITY: VERIFIED</div>
+                            </div>
+                            <div class="border-t border-white/5 my-2"></div>
+                            <div class="animate-slide-up opacity-80" style="animation-delay: 0.2s;">
+                                <div class="text-nova-accent">> EVENT: VOTE_CAST</div>
+                                <div class="text-gray-500 truncate">> HASH: e3b0c44298fc1c149afbf4c8996fb924...</div>
+                                <div class="text-green-400">> INTEGRITY: VERIFIED</div>
+                            </div>
+                            <div class="border-t border-white/5 my-2"></div>
+                            <div class="animate-slide-up" style="animation-delay: 0.4s;">
+                                <div class="text-nova-secondary">> EVENT: NEW_BLOCK_MINED</div>
+                                <div class="text-white truncate">> Merkle Root: a7f8d9...</div>
+                            </div>
+                            <div class="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-[rgba(11,10,38,1)] to-transparent"></div>
                         </div>
                     </div>
-                    <div class="flex gap-4">
-                        <div class="w-1 bg-indigo-500 h-full rounded"></div>
-                        <div>
-                            <h4 class="text-white font-medium">Voter Anonymity</h4>
-                            <p class="text-sm text-nova-muted">Voter identity is cryptographically hashed and separated from the ballot.</p>
+                </div>
+
+                <div class="order-1 lg:order-2 relative">
+                    <div class="absolute -left-8 -top-8 text-9xl font-black text-white/5 z-0 pointer-events-none">03</div>
+                    <div class="relative z-10">
+                        <div class="inline-flex items-center gap-2 text-nova-accent mb-4 font-mono text-sm px-3 py-1 rounded-full bg-nova-accent/10 border border-nova-accent/20">
+                            <i data-lucide="cpu" class="w-4 h-4"></i>
+                            <span>SECURITY ARCHITECTURE</span>
+                        </div>
+                        <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">Unbreakable <span class="text-gradient">Integrity.</span></h2>
+                        <p class="text-lg text-nova-muted mb-8 leading-relaxed">
+                            NOVA-SYNTHEX utilizes a decentralized, blockchain-inspired ledger system. Once a vote is cast, it is mathematically impossible to alter or delete it without detection.
+                        </p>
+                        
+                        <div class="space-y-6">
+                            <div class="flex gap-4 items-start group">
+                                <div class="w-12 h-12 rounded-xl bg-nova-surface border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:border-nova-accent transition-colors">
+                                    <i data-lucide="fingerprint" class="text-white w-6 h-6 group-hover:text-nova-accent transition-colors"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-white mb-1">One-Person-One-Vote</h4>
+                                    <p class="text-nova-muted">Strict enforcement prevents double voting through token invalidation and atomic database transactions.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-4 items-start group">
+                                <div class="w-12 h-12 rounded-xl bg-nova-surface border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:border-nova-secondary transition-colors">
+                                    <i data-lucide="ghost" class="text-white w-6 h-6 group-hover:text-nova-secondary transition-colors"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-white mb-1">Verifiable Anonymity</h4>
+                                    <p class="text-nova-muted">Voter identity is cryptographically hashed and permanently separated from the ballot choice.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -363,45 +426,75 @@
         </div>
     </section>
 
-    <!-- Use Cases -->
-    <section class="py-20 relative z-10">
-        <div class="max-w-7xl mx-auto px-6">
-            <h3 class="text-xl font-bold text-white mb-8 border-l-4 border-indigo-500 pl-4">Standard Deployment Scenarios</h3>
-            <div class="grid md:grid-cols-4 gap-4">
-                <div class="p-4 bg-nova-surface rounded border border-nova-border">
-                    <h4 class="text-white font-medium text-sm mb-1">Department Head Election</h4>
-                    <p class="text-xs text-nova-muted">Formal internal promotion voting.</p>
+    <!-- Critical Section: Election vs Poll -->
+    <section id="comparison" class="py-24 bg-[#07051A] relative z-10 border-y border-white/5">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-16 relative">
+                 <div class="absolute left-1/2 -top-10 -translate-x-1/2 text-8xl font-black text-white/5 z-0 pointer-events-none">04</div>
+                <h2 class="text-4xl font-bold text-white mb-4 relative z-10">Module <span class="text-gradient">Distinction</span></h2>
+                <p class="text-nova-muted text-lg max-w-2xl mx-auto relative z-10">
+                    Understand the difference between Binding Elections and Opinion Polls before initialization.
+                </p>
+            </div>
+
+            <div class="glass-card rounded-2xl overflow-hidden border border-white/10">
+                <div class="grid grid-cols-3 bg-white/5 border-b border-white/10 backdrop-blur-md">
+                    <div class="p-6 font-mono text-sm text-nova-muted uppercase tracking-wider flex items-center">Parameter</div>
+                    <div class="p-6 font-mono text-lg text-white font-bold border-l border-white/10 bg-nova-accent/20 flex flex-col items-center justify-center gap-2">
+                        <i data-lucide="vote" class="w-6 h-6 text-nova-accent"></i>
+                        ELECTION
+                    </div>
+                    <div class="p-6 font-mono text-lg text-white font-bold border-l border-white/10 bg-nova-secondary/10 flex flex-col items-center justify-center gap-2">
+                        <i data-lucide="bar-chart-2" class="w-6 h-6 text-nova-secondary"></i>
+                        POLL
+                    </div>
                 </div>
-                <div class="p-4 bg-nova-surface rounded border border-nova-border">
-                    <h4 class="text-white font-medium text-sm mb-1">Committee Selection</h4>
-                    <p class="text-xs text-nova-muted">Board or safety committee representation.</p>
+
+                <div class="grid grid-cols-3 border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <div class="p-6 text-nova-muted font-medium flex items-center">Primary Objective</div>
+                    <div class="p-6 text-white border-l border-white/5 text-center font-medium">Select a Person/Entity</div>
+                    <div class="p-6 text-gray-400 border-l border-white/5 text-center">Gauge Sentiment</div>
                 </div>
-                <div class="p-4 bg-nova-surface rounded border border-nova-border">
-                    <h4 class="text-white font-medium text-sm mb-1">Policy Ratification</h4>
-                    <p class="text-xs text-nova-muted">Acceptance of new HR policies.</p>
+
+                <div class="grid grid-cols-3 border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <div class="p-6 text-nova-muted font-medium flex items-center">Outcome</div>
+                    <div class="p-6 text-white border-l border-white/5 text-center font-medium">Definitive Winner</div>
+                    <div class="p-6 text-gray-400 border-l border-white/5 text-center">Aggregated Data</div>
                 </div>
-                <div class="p-4 bg-nova-surface rounded border border-nova-border">
-                    <h4 class="text-white font-medium text-sm mb-1">Town Hall Feedback</h4>
-                    <p class="text-xs text-nova-muted">Real-time questions and polling.</p>
+
+                <div class="grid grid-cols-3 border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <div class="p-6 text-nova-muted font-medium flex items-center">Security Level</div>
+                    <div class="p-6 text-nova-accent border-l border-white/5 text-center font-mono font-bold tracking-wide">MAXIMUM (Strict Auth)</div>
+                    <div class="p-6 text-gray-400 border-l border-white/5 text-center font-mono">STANDARD</div>
+                </div>
+
+                <div class="grid grid-cols-3 hover:bg-white/5 transition-colors">
+                    <div class="p-6 text-nova-muted font-medium flex items-center">Audit Ledger</div>
+                    <div class="p-6 text-white border-l border-white/5 text-center font-medium">Mandatory</div>
+                    <div class="p-6 text-gray-400 border-l border-white/5 text-center">Optional</div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Final Action -->
-    <section class="py-24 bg-gradient-to-b from-nova-bg to-indigo-950/20 relative z-10 text-center border-t border-nova-border">
-        <div class="max-w-3xl mx-auto px-6">
-            <i data-lucide="alert-triangle" class="w-10 h-10 text-indigo-400 mx-auto mb-6"></i>
-            <h2 class="text-3xl font-bold text-white mb-4">Ready to Initialize?</h2>
-            <p class="text-nova-muted mb-10">
-                Proceed only if you understand the responsibility of administering a corporate voting process. 
-                Misconfiguration can lead to voided results.
+    <section class="py-32 relative z-10 text-center overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-nova-accent/10 pointer-events-none"></div>
+        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-hero-glow blur-[150px] opacity-30 pointer-events-none"></div>
+        
+        <div class="max-w-4xl mx-auto px-6 relative z-10">
+            <div class="w-20 h-20 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-nova-accent/20">
+                <i data-lucide="power" class="w-10 h-10 text-nova-accent"></i>
+            </div>
+            <h2 class="text-5xl md:text-6xl font-black text-white mb-6">Ready to Initialize?</h2>
+            <p class="text-xl text-nova-muted mb-12 max-w-2xl mx-auto font-light">
+                Proceed only if you understand the responsibility of administering a corporate voting process. Misconfiguration can lead to voided results.
             </p>
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button onclick="handleInit()" class="w-full sm:w-auto px-8 py-3 bg-white text-black hover:bg-gray-200 rounded font-bold transition-all">
-                    Initialize System
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <button onclick="handleInit()" class="btn-primary w-full sm:w-auto px-12 py-5 rounded-full font-bold text-lg tracking-wide shadow-[0_0_30px_rgba(112,0,255,0.4)]">
+                    Initialize System NOW
                 </button>
-                <a href="portal-select.html" class="w-full sm:w-auto px-8 py-3 bg-nova-bg border border-nova-border hover:border-indigo-500 text-white rounded font-medium transition-all inline-flex items-center justify-center">
+                <a href="portal-select.html" class="btn-secondary w-full sm:w-auto px-12 py-5 rounded-full font-bold text-lg tracking-wide text-white">
                     Enter Admin Portal
                 </a>
             </div>
@@ -409,35 +502,43 @@
     </section>
 
     <!-- Footer -->
-    <footer class="bg-nova-surface border-t border-nova-border py-12 relative z-10">
-        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div>
-                <div class="flex items-center gap-2 mb-2">
-                    <i data-lucide="hexagon" class="text-nova-muted h-4 w-4"></i>
-                    <span class="font-mono font-bold text-white text-sm">NOVA-SYNTHEX</span>
+    <footer class="bg-[#030014] border-t border-white/10 py-12 relative z-10">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+            <div class="flex items-center gap-3 opacity-70 hover:opacity-100 transition-opacity">
+                <i data-lucide="hexagon" class="text-nova-muted h-6 w-6"></i>
+                <div>
+                    <span class="font-mono font-bold text-white text-lg tracking-widest">NOVA<span class="font-light text-nova-accent">SYNTHEX</span></span>
+                    <p class="text-[10px] text-nova-muted font-mono tracking-widest mt-1">SECURE GOVERNANCE ARCHITECTURE</p>
                 </div>
-                <p class="text-xs text-nova-muted">
-                    Secure Governance & Polling Architecture.
-                </p>
             </div>
             
-            <div class="text-right">
-                <p class="text-[10px] text-gray-500 max-w-md ml-auto leading-relaxed">
-                    DISCLAIMER: NOVA-SYNTHEX is intended for internal corporate governance and academic research purposes only. 
-                    It is not designed, certified, or intended for public, governmental, or statutory elections.
+            <div class="text-center md:text-right max-w-md">
+                <p class="text-xs text-gray-500 leading-relaxed mb-2">
+                    DISCLAIMER: Intended for internal corporate governance and academic research purposes only. Not certified for public or statutory elections.
                 </p>
-                <p class="text-[10px] text-gray-600 mt-2">
-                    &copy; 2024 NOVA-SYNTHEX Systems. All rights reserved.
+                <p class="text-xs font-mono text-nova-accent/50">
+                    &copy; 2026 NOVA-SYNTHEX Systems. All rights reserved.
                 </p>
             </div>
         </div>
     </footer>
 
-    <!-- Simple Feedback Script -->
     <script>
         // Initialize Lucide Icons after DOM is fully loaded
         document.addEventListener("DOMContentLoaded", () => {
             lucide.createIcons();
+            
+            // Subtle navbar background effect on scroll
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('bg-nova-bg/90', 'shadow-lg');
+                    navbar.classList.remove('bg-nova-bg/60');
+                } else {
+                    navbar.classList.add('bg-nova-bg/60');
+                    navbar.classList.remove('bg-nova-bg/90', 'shadow-lg');
+                }
+            });
         });
 
         function handleInit() {
