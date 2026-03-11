@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NOVA-SYNTHEX | Corporate Governance System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
+    <!-- FIXED: Locked to a stable version to prevent missing icons from library updates -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.292.0/dist/umd/lucide.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <script>
@@ -434,15 +435,15 @@
 
     <!-- Simple Feedback Script -->
     <script>
-        // Initialize Lucide Icons
-        lucide.createIcons();
+        // Initialize Lucide Icons after DOM is fully loaded
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+        });
 
         function handleInit() {
             // Direct navigation to initialization page
             window.location.href = "initialize.html";
         }
-        
-        // Removed handleAccess() as buttons are now direct links
     </script>
 </body>
 </html>
